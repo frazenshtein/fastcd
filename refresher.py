@@ -71,7 +71,7 @@ def getShells(shellDaemons, shell="bash"):
             if name in shellDaemons:
                 for candidate in proc.get_children():
                     if getProcessExe(candidate).endswith(shell):
-                        shells.append(candidate)
+                        shells.append(candidate.replace(" (deleted)", ""))
         except (psutil.NoSuchProcess, psutil.AccessDenied): pass
     return shells
 
