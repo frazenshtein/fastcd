@@ -79,9 +79,12 @@ def getCwds(shells):
     d = {}
     for proc in shells:
         try:
-            d[proc.pid] = proc.getcwd().replace(" (deleted)", "")
+            d[proc.pid] = getCleanPath(proc.getcwd())
         except psutil.NoSuchProcess: pass
     return d
+
+def getCleanPath(path):
+    return path.replace(" (deleted)", "")
 
 def main(args):
     daemons = [
@@ -106,9 +109,10 @@ def main(args):
     while True:
         for proc in shells:
             try:
-                if proc.getcwd() != lastCwds[proc.pid]:
-                    lastCwds[proc.pid] = proc.getcwd()
-                    updatePathList(proc.getcwd(), args.Output)
+                procCwd = getCleanPath(proc.getcwd())
+                if procCwd != lastCwds[proc.pid]:
+                    lastCwds[proc.pid] = procCwd
+                    updatePathList(procCwd, args.Output)
             except psutil.NoSuchProcess: pass
 
         time.sleep(timeout)
