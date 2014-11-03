@@ -77,6 +77,9 @@ class Display(object):
         return self.SelectedPath
 
     def InputHandler(self, input):
+        if not isinstance(input, str):
+            return input
+
         if input is 'esc':
             raise urwid.ExitMainLoop()
 
