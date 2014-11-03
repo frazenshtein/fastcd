@@ -71,7 +71,7 @@ def getShells(shellDaemons, shell="bash"):
             if name in shellDaemons:
                 for candidate in proc.get_children():
                     if getProcessExe(candidate).endswith(shell):
-                        shells.append(candidate.replace(" (deleted)", ""))
+                        shells.append(candidate)
         except (psutil.NoSuchProcess, psutil.AccessDenied): pass
     return shells
 
@@ -79,7 +79,7 @@ def getCwds(shells):
     d = {}
     for proc in shells:
         try:
-            d[proc.pid] = proc.getcwd()
+            d[proc.pid] = proc.getcwd().replace(" (deleted)", "")
         except psutil.NoSuchProcess: pass
     return d
 
