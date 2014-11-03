@@ -1,9 +1,6 @@
 fastcd
 ======
 
-## Fastcd
-
-
 ## Far-like directory alternative history for linux
 
 These scripts allow you to quickly navigate to the desired directory
@@ -15,6 +12,14 @@ Just enter "j" in the terminal and start typing the name of the desired director
 You can use arrows and Page Up/Down to navigate the list.
 Press Esc to exit.
 Press Enter to change directory.
+
+        /home/frazenshtein/Soft
+        /home/frazenshtein/Soft/fastcd
+        /usr/lib/pyhon2.7
+        /usr/lib
+    ->  /home/frazenshtein/Soft/fastcd/.git
+
+    Fastcd to:
 
 ### INSTALLATION
 
