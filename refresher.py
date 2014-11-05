@@ -105,7 +105,6 @@ def main(args):
         for path in lastCwds.values():
             updatePathList(path, args.Output)
 
-
     while True:
         for proc in shells:
             try:

@@ -8,14 +8,17 @@ import urwid
 
 DESC = '''
 Jumper shows you the last visited directories, with the ability to quickly cd.
+You can use arrows and Page Up/Down to navigate the list.
 Press Esc to exit.
-Press Enter to cd to the selected directory
+Press Enter to change directory.
 Start typing to filter directories.
+Press Tab to turn on/off case sensitive search.
 
 Supported extra symbols:
-  * - any number of any character
-  ? - any character
-  $ - end of path
+
+    * - any number of any character
+    ? - any character
+    $ - end of path
 '''
 
 def parseCommandLine():
@@ -64,6 +67,7 @@ class Display(object):
         self.ListBox = None
         self.FooterEdit = None
         self.View = None
+        self.CaseSensitive = False
 
         with open(pathsFile) as file:
             for line in file.readlines():
@@ -116,6 +120,9 @@ class Display(object):
                 self.SelectedPath = path
             raise urwid.ExitMainLoop()
 
+        if input is 'tab':
+            self.CaseSensitive = not self.CaseSensitive
+
         # Clean up header
         self.HeaderText.set_text("")
 
@@ -134,7 +141,9 @@ class Display(object):
         inputText = re.escape(inputText)
         for k ,v in validSpecialSymbols.items():
             inputText = inputText.replace(k, v)
-        regex = re.compile(inputText, re.IGNORECASE)
+
+        reFlags = 0 if self.CaseSensitive else re.IGNORECASE
+        regex = re.compile(inputText, reFlags)
         for path in self.Paths:
             match = regex.search(path)
             if match:

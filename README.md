@@ -13,6 +13,7 @@ You can use arrows and Page Up/Down to navigate the list.
 Press Esc to exit.
 Press Enter to change directory.
 Start typing to filter directories.
+Press Tab to turn on/off case sensitive search.
 
 Supported extra symbols:
 
