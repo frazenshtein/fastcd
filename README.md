@@ -60,11 +60,11 @@ Now you can just press Enter to cd to the last visited directory
 ### INSTALLATION
 
 Requires bash + python 2.7 + extra modules
-Just type the following to install required python modules.
+Just type the following to install required python modules:
 
     pip install --user urwid psutil
 
-Get tool
+Get the utility:
 
     git clone https://github.com/frazenshtein/fastcd
 
