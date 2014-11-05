@@ -11,7 +11,7 @@ import psutil
 def parseCommandLine():
     parser = ArgumentParser()
     parser.add_argument("-o", "--output", dest="Output", metavar="FILE", default="~/.fastcd")
-    parser.add_argument("--path-timeout", dest="PathTimeout", metavar="FLOAT", default=0.5)
+    parser.add_argument("--path-timeout", dest="PathTimeout", metavar="FLOAT", default=0.2)
     parser.add_argument("--process-timeout", dest="ProcessTimeout", metavar="FLOAT", default=5.0)
     parser.add_argument("--daemon", dest="Daemon", action="store_true")
 
