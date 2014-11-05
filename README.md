@@ -62,6 +62,10 @@ Just type the following to install required python modules.
 
     pip install --user urwid psutil
 
+Get tool
+
+    git clone https://github.com/frazenshtein/fastcd
+
 Each user who wants to use fastcd should source the
 set.sh file into their bashrc, i.e from within ~/.bashrc just add
 a line:
