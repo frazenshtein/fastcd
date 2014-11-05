@@ -45,8 +45,10 @@ class Display(object):
         self.PathsFile = pathsFile
         self.SelectedPath = os.getcwd()
         self.Paths = []
+        self.Header = None
+        self.HeaderText = None
         self.ListBox = None
-        self.Edit = None
+        self.FooterEdit = None
         self.View = None
 
         with open(pathsFile) as file:
@@ -59,15 +61,18 @@ class Display(object):
         if self.Paths:
             self.ListBox.set_focus(len(self.Paths) - 1)
 
-        self.Edit = urwid.Edit('Fastcd to: ')
-        self.View = urwid.Frame(urwid.AttrWrap(self.ListBox, 'body'), footer=self.Edit)
+        self.FooterEdit = urwid.Edit('Fastcd to: ')
+        self.HeaderText = urwid.Text("")
+        self.Header = urwid.Pile([urwid.Padding(urwid.AttrWrap(self.HeaderText, 'info'), left=2)])
+        self.View = urwid.Frame(urwid.AttrWrap(self.ListBox, 'body'), footer=self.FooterEdit, header=self.Header)
 
         palette = [
             ('selected', 'black,underline', '',      'standout'),
             ('body',     'light gray',      '',      'standout'),
             ('match',    'light cyan',      '',      'standout'),
             ('focus',    'brown',           '',      'standout'),
-            ('footer',   'light gray',      'black', 'standout'),
+            ('footer',   'light gray',      '',      'standout'),
+            ('info',     'dark red',        '',      'standout'),
         ]
 
         loop = urwid.MainLoop(self.View, palette, unhandled_input=self.InputHandler)
@@ -86,13 +91,27 @@ class Display(object):
         if input is 'enter':
             selectedItem = self.ListBox.get_focus()[0]
             if selectedItem:
-                self.SelectedPath = selectedItem.Label
+                path = selectedItem.Label
+                if os.path.islink(path):
+                    path = os.readlink(path)
+                    if not os.path.exists(path):
+                        self.HeaderText.set_text("Link refers to the not existing directory: '%s'" % path)
+                        return
+                elif not os.path.exists(path):
+                    self.HeaderText.set_text("No such directory: '%s'" % path)
+                    return
+                self.SelectedPath = path
             raise urwid.ExitMainLoop()
 
-        self.Edit.keypress((20,), input)
+        # Clean up header
+        self.HeaderText.set_text("")
 
+        # Display input
+        self.FooterEdit.keypress((20,), input)
+
+        # Filter list
         newItems = []
-        inputText = self.Edit.get_edit_text()
+        inputText = self.FooterEdit.get_edit_text()
         # Support unix filename pattern matching
         inputText = re.escape(inputText).replace(r"\?", ".").replace(r"\*", ".*?")
         regex = re.compile(inputText, re.IGNORECASE)
