@@ -22,15 +22,17 @@ class ItemWidget(urwid.WidgetWrap):
         self.Label = label
         self.Subline = subline
         items = [
-            ('fixed', 5, urwid.AttrWrap(urwid.Text("  ->"), 'selected', 'focus')),
+            # ('fixed', 5, urwid.AttrWrap(urwid.Text("  ->"), 'selected', 'common')),
+            ('fixed', 2, urwid.Text(""))
         ]
         if self.Subline:
             before, match, after = self.Label.partition(self.Subline)
-            items.append(urwid.Text(('body', [before, ('match', match), after])))
+            text = urwid.AttrWrap(urwid.Text([before, ('match', match), after]), 'body', 'common')
+            items.append(text)
         else:
-            items.append(urwid.AttrWrap(urwid.Text(self.Label), 'body'))
+            items.append(urwid.AttrWrap(urwid.Text(self.Label), 'body', 'common'))
 
-        super(ItemWidget, self).__init__(urwid.Columns(items))
+        super(ItemWidget, self).__init__(urwid.Columns(items, focus_column=1))
 
     def selectable(self):
         return True
@@ -61,21 +63,20 @@ class Display(object):
         if self.Paths:
             self.ListBox.set_focus(len(self.Paths) - 1)
 
-        self.FooterEdit = urwid.Edit('Fastcd to: ')
+        self.FooterEdit = urwid.AttrWrap(urwid.Edit('Fastcd to: '), 'input')
         self.HeaderText = urwid.Text("")
         self.Header = urwid.Pile([urwid.Padding(urwid.AttrWrap(self.HeaderText, 'info'), left=2)])
-        self.View = urwid.Frame(urwid.AttrWrap(self.ListBox, 'body'), footer=self.FooterEdit, header=self.Header)
+        self.View = urwid.Frame(self.ListBox, footer=self.FooterEdit, header=self.Header)
 
         palette = [
-            ('selected', 'black,underline', '',      'standout'),
-            ('body',     'light gray',      '',      'standout'),
-            ('match',    'light cyan',      '',      'standout'),
-            ('focus',    'brown',           '',      'standout'),
-            ('footer',   'light gray',      '',      'standout'),
-            ('info',     'dark red',        '',      'standout'),
+            ('body',    'light gray',   'black',        'standout'),
+            ('match',   'black',        'dark cyan',    'standout'),
+            ('common',  'light blue',   'black',        'standout'),
+            ('input',   'light gray',   'black',        'standout'),
+            ('info',    'dark red',     'black',        'standout'),
         ]
 
-        loop = urwid.MainLoop(self.View, palette, unhandled_input=self.InputHandler)
+        loop = urwid.MainLoop(self.View, palette, unhandled_input=self.InputHandler, handle_mouse=False)
         loop.run()
 
     def GetSelectedPath(self):
