@@ -24,7 +24,7 @@ For more info: "j --help"
 
 ### Example
 
-Type "j" and press Enter to launch fastcd
+Type "j" and press Enter in the terminal to launch fastcd
 
         /home/frazenshtein/Soft
         /home/frazenshtein/Soft/fastcd
