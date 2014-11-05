@@ -45,7 +45,7 @@ Type "fa" to filter list of directories
 
 Press Up and Enter to cd to /home/frazenshtein/Soft/fastcd
 
-If you close terminal or open another one and launch fastcd ("j") you will get updated list of directories
+If you close and open terminal or open another one and launch fastcd ("j") you will get updated list of directories
 
         /home/frazenshtein/Soft
         /usr/lib/pyhon2.7
