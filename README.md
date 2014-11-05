@@ -12,6 +12,12 @@ Just enter "j" in the terminal and start typing the name of the desired director
 You can use arrows and Page Up/Down to navigate the list.
 Press Esc to exit.
 Press Enter to change directory.
+Start typing to filter directories.
+
+Supported extra symbols:
+  * - any number of any character
+  ? - any character
+  $ - end of path
 
         /home/frazenshtein/Soft
         /home/frazenshtein/Soft/fastcd
@@ -20,6 +26,8 @@ Press Enter to change directory.
     ->  /home/frazenshtein/Soft/fastcd/.git
 
     Fastcd to:
+
+For more info: "j --help"
 
 ### INSTALLATION
 
