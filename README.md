@@ -72,6 +72,6 @@ a line:
 
     source PATH_TO_FASTCD/set.sh
 
-And update ~/.bashrc:
+And reload bashrc in your terminal:
 
     source ~/.bashrc
