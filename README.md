@@ -51,6 +51,8 @@ If you close terminal or open another one and launch fastcd ("j") you will get u
         /home/frazenshtein/Soft/fastcd/.git
     ->  /home/frazenshtein/Soft/fastcd
 
+    Fastcd to:
+
 Now you can just press Enter to cd to the last visited directory
 
 ### INSTALLATION
