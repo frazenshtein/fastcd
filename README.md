@@ -1,7 +1,7 @@
 fastcd
 ======
 
-## Briefly
+### Briefly
 
 These scripts allow you to quickly navigate to the desired directory
 that have been recently visited.
