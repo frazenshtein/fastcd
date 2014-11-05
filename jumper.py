@@ -2,12 +2,24 @@
 
 import os
 import re
-from argparse import ArgumentParser
+from argparse import ArgumentParser, RawTextHelpFormatter
 
 import urwid
 
+DESC = '''
+Jumper shows you the last visited directories, with the ability to quickly cd.
+Press Esc to exit.
+Press Enter to cd to the selected directory
+Start typing to filter directories.
+
+Supported extra symbols:
+  * - any number of any character
+  ? - any character
+  $ - end of path
+'''
+
 def parseCommandLine():
-    parser = ArgumentParser()
+    parser = ArgumentParser(description=DESC, formatter_class=RawTextHelpFormatter)
     parser.add_argument("-i", "--input", dest="Input", metavar="FILE", default="~/.fastcd")
     parser.add_argument("-o", "--output", dest="Output", metavar="FILE", default=None)
 
@@ -114,7 +126,14 @@ class Display(object):
         newItems = []
         inputText = self.FooterEdit.get_edit_text()
         # Support unix filename pattern matching
-        inputText = re.escape(inputText).replace(r"\?", ".").replace(r"\*", ".*?")
+        validSpecialSymbols = {
+            r"\?": ".",
+            r"\*": ".*?",
+            r"\$": "$",
+        }
+        inputText = re.escape(inputText)
+        for k ,v in validSpecialSymbols.items():
+            inputText = inputText.replace(k, v)
         regex = re.compile(inputText, re.IGNORECASE)
         for path in self.Paths:
             match = regex.search(path)

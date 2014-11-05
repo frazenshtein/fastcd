@@ -12,9 +12,14 @@ python $REFRESHERTOOL --daemon
 # Set (J)umper
 function j {
     PATHFILE="/tmp/`date +%s`.path"
-    python $JUMPERTOOL -o $PATHFILE
-    OUTPUTPATH=`cat $PATHFILE`
-    rm $PATHFILE
-    cd $OUTPUTPATH
+    python $JUMPERTOOL -o $PATHFILE $@
+    if [[ $@ == "--help" ]] || [[ $@ == "-h" ]]
+    then
+        :
+    else
+        OUTPUTPATH=`cat $PATHFILE`
+        rm $PATHFILE
+        cd $OUTPUTPATH
+    fi
 }
 alias j='j'
