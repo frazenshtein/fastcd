@@ -3,8 +3,7 @@ fastcd
 
 ### Briefly
 
-These scripts allow you to quickly navigate to the desired directory
-that have been recently visited.
+These scripts allow you to quickly navigate to the desired directory that has been recently visited.
 The utility was written because of the great longing for FarManager and it's plug-in alternative history.
 
 ### USAGE
