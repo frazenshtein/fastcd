@@ -28,32 +28,32 @@ For more info: "j --help"
 
 Type "j" and press Enter in the terminal to launch fastcd
 
-        /home/frazenshtein/Soft
-        /home/frazenshtein/Soft/fastcd
-        /usr/lib/pyhon2.7
-        /usr/lib
-    ->  /home/frazenshtein/Soft/fastcd/.git
-
     Fastcd to:
+
+    ->  /home/frazenshtein/Soft
+        /home/frazenshtein/Soft/fastcd/.git
+        /usr/lib/pyhon2.7
+        /home/frazenshtein/Soft/fastcd/
+        /usr/lib
 
 Type "fa" to filter list of directories
 
-        /home/frazenshtein/Soft/fastcd
-    ->  /home/frazenshtein/Soft/fastcd/.git
-
     Fastcd to: fa
 
-Press Up and Enter to cd to /home/frazenshtein/Soft/fastcd
+    ->  /home/frazenshtein/Soft/fastcd/.git
+        /home/frazenshtein/Soft/fastcd
+
+Press Down and Enter to cd to /home/frazenshtein/Soft/fastcd
 
 If you close and open terminal or open another one and launch fastcd ("j") you will get updated list of directories
 
+    Fastcd to:
+
+    ->  /home/frazenshtein/Soft/fastcd
         /home/frazenshtein/Soft
+        /home/frazenshtein/Soft/fastcd/.git
         /usr/lib/pyhon2.7
         /usr/lib
-        /home/frazenshtein/Soft/fastcd/.git
-    ->  /home/frazenshtein/Soft/fastcd
-
-    Fastcd to:
 
 Now you can just press Enter to cd to the last visited directory
 

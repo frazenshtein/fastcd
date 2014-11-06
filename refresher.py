@@ -49,11 +49,9 @@ def updatePathList(path, filename, limit=5000):
         paths = []
     # Path already in data
     if path in paths:
-        # Put path down
+        # Raise path
         paths.remove(path)
-    paths.append(path)
-
-    paths = paths[:limit]
+    paths = [path] + paths[:limit]
     with open(filename, "w") as file:
         for path in paths:
             file.write("%s\n" % path)

@@ -63,9 +63,9 @@ class Display(object):
         self.SelectedPath = os.getcwd()
         self.Paths = []
         self.Header = None
-        self.HeaderText = None
+        self.InfoText = None
         self.ListBox = None
-        self.FooterEdit = None
+        self.PathFilter = None
         self.View = None
         self.CaseSensitive = False
 
@@ -77,12 +77,12 @@ class Display(object):
         listWalker = urwid.SimpleListWalker([ItemWidget(p) for p in self.Paths])
         self.ListBox = urwid.ListBox(listWalker)
         if self.Paths:
-            self.ListBox.set_focus(len(self.Paths) - 1)
+            self.ListBox.set_focus(0)
 
-        self.FooterEdit = urwid.AttrWrap(urwid.Edit('Fastcd to: '), 'input')
-        self.HeaderText = urwid.Text("")
-        self.Header = urwid.Pile([urwid.Padding(urwid.AttrWrap(self.HeaderText, 'info'), left=2)])
-        self.View = urwid.Frame(self.ListBox, footer=self.FooterEdit, header=self.Header)
+        self.PathFilter = urwid.AttrWrap(urwid.Edit('Fastcd to: '), 'input')
+        self.InfoText = urwid.Text("")
+        self.Header = urwid.Pile([self.PathFilter, urwid.Padding(urwid.AttrWrap(self.InfoText, 'info'), left=2)])
+        self.View = urwid.Frame(self.ListBox, header=self.Header)
 
         palette = [
             ('body',    'light gray',   'black',        'standout'),
@@ -112,10 +112,10 @@ class Display(object):
                 if os.path.islink(path):
                     path = os.readlink(path)
                     if not os.path.exists(path):
-                        self.HeaderText.set_text("Link refers to the not existing directory: '%s'" % path)
+                        self.InfoText.set_text("Link refers to the not existing directory: '%s'" % path)
                         return
                 elif not os.path.exists(path):
-                    self.HeaderText.set_text("No such directory: '%s'" % path)
+                    self.InfoText.set_text("No such directory: '%s'" % path)
                     return
                 self.SelectedPath = path
             raise urwid.ExitMainLoop()
@@ -124,14 +124,14 @@ class Display(object):
             self.CaseSensitive = not self.CaseSensitive
 
         # Clean up header
-        self.HeaderText.set_text("")
+        self.InfoText.set_text("")
 
         # Display input
-        self.FooterEdit.keypress((20,), input)
+        self.PathFilter.keypress((20,), input)
 
         # Filter list
         newItems = []
-        inputText = self.FooterEdit.get_edit_text()
+        inputText = self.PathFilter.get_edit_text()
         # Support unix filename pattern matching
         validSpecialSymbols = {
             r"\?": ".",
@@ -153,7 +153,7 @@ class Display(object):
 
         self.ListBox.body[:] = listWalker
         if newItems:
-            self.ListBox.set_focus(len(newItems) - 1)
+            self.ListBox.set_focus(0)
 
 
 def main(args):
