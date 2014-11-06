@@ -19,7 +19,8 @@ function j {
     else
         OUTPUTPATH=`cat $PATHFILE`
         rm $PATHFILE
-        cd $OUTPUTPATH
+        # Eval is required to interpolate ~
+        eval cd $OUTPUTPATH
     fi
 }
 alias j='j'

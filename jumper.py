@@ -2,6 +2,7 @@
 
 import os
 import re
+from os.path import expanduser
 from argparse import ArgumentParser, RawTextHelpFormatter
 
 try:
@@ -37,7 +38,7 @@ def parseCommandLine():
     parser.add_argument("-o", "--output", dest="Output", metavar="FILE", default=None)
 
     args = parser.parse_args()
-    args.Input = os.path.expanduser(args.Input)
+    args.Input = expanduser(args.Input)
     return args
 
 
@@ -89,11 +90,13 @@ class Display(object):
 
         with open(pathsFile) as file:
             for line in file.readlines():
-                line = line.strip()
-                self.Paths.append((line, os.path.exists(line)))
+                path = line.strip()
+                exists = os.path.exists(expanduser(path))
+                self.Paths.append((path, exists))
 
     def Run(self):
-        listWalker = urwid.SimpleListWalker([PathWidget(path, exists=exists) for path, exists in self.Paths])
+        widgets = [PathWidget(path, exists=exists) for path, exists in self.Paths]
+        listWalker = urwid.SimpleListWalker(widgets)
         self.ListBox = urwid.ListBox(listWalker)
         if self.Paths:
             self.ListBox.set_focus(0)
@@ -106,7 +109,7 @@ class Display(object):
         palette = [
             ('body',    'light gray',   'default',      'standout'),
             ('match',   'dark cyan',    'default',      'standout'),
-            ('common',  'black',        'light gray',   'standout'),
+            ('common',  'black',        'dark cyan',   'standout'),
             ('missing', 'dark gray',    'default',      'standout'),
             ('input',   'light gray',   'default',      'standout'),
             ('info',    'dark red',     'default',      'standout'),
@@ -115,8 +118,17 @@ class Display(object):
         loop = urwid.MainLoop(self.View, palette, unhandled_input=self.InputHandler, handle_mouse=False)
         loop.run()
 
+    def GetUserHomeDir(self):
+        return os.path.realpath(os.environ["HOME"])
+
+    def ReplaceHomeWithTilde(self, path):
+        home = self.GetUserHomeDir()
+        if path.startswith(home):
+            path = path.replace(home, "~")
+        return path
+
     def GetSelectedPath(self):
-        return self.SelectedPath
+        return self.ReplaceHomeWithTilde(self.SelectedPath)
 
     def InputHandler(self, input):
         if not isinstance(input, str):
@@ -128,7 +140,7 @@ class Display(object):
         if input is 'enter':
             selectedItem = self.ListBox.get_focus()[0]
             if selectedItem:
-                path = selectedItem.Path
+                path = expanduser(selectedItem.Path)
                 # Double Enter should return nearest path
                 if path == self.PrevSelectedMissingPath:
                     while path:

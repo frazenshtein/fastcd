@@ -14,6 +14,7 @@ def parseCommandLine():
     parser.add_argument("--path-timeout", dest="PathTimeout", metavar="FLOAT", default=0.2)
     parser.add_argument("--process-timeout", dest="ProcessTimeout", metavar="FLOAT", default=5.0)
     parser.add_argument("--daemon", dest="Daemon", action="store_true")
+    parser.add_argument("--restart", dest="Restart", action="store_true")
 
     args = parser.parse_args()
     args.Output = os.path.expanduser(args.Output)
@@ -83,6 +84,14 @@ def getCwds(shells):
 def getCleanPath(path):
     return path.replace(" (deleted)", "")
 
+def getUserHomeDir():
+    return os.path.realpath(os.environ["HOME"])
+
+def replaceHomeWithTilde(path, home):
+    if path.startswith(home):
+        path = path.replace(home, "~")
+    return path
+
 def main(args):
     daemons = [
         "konsole",
@@ -97,9 +106,11 @@ def main(args):
     timeout = args.PathTimeout
     shells = getShells(daemons)
     lastCwds = getCwds(shells)
+    userHome = getUserHomeDir()
 
     if not os.path.exists(args.Output):
         for path in lastCwds.values():
+            path = replaceHomeWithTilde(path, userHome)
             updatePathList(path, args.Output)
 
     while True:
@@ -108,7 +119,8 @@ def main(args):
                 procCwd = getCleanPath(proc.getcwd())
                 if procCwd != lastCwds[proc.pid]:
                     lastCwds[proc.pid] = procCwd
-                    updatePathList(procCwd, args.Output)
+                    path = replaceHomeWithTilde(procCwd, userHome)
+                    updatePathList(path, args.Output)
             except psutil.NoSuchProcess: pass
 
         time.sleep(timeout)
@@ -118,17 +130,38 @@ def main(args):
             shells = getShells(daemons)
             lastCwds = getCwds(shells)
 
+def perror(line):
+    print(line)
+    exit(1)
+
+def restart(args):
+    if os.path.exists(args.Lock):
+        with open(args.Lock) as file:
+            pid = file.read()
+        if pid:
+            try:
+                proc = psutil.Process(int(pid))
+                if proc.name == "python" and os.path.basename(sys.argv[0]) in proc.cmdline:
+                    proc.terminate()
+                    proc.wait()
+            except psutil.NoSuchProcess: pass
+
 if __name__ == '__main__':
     args = parseCommandLine()
 
     if args.Daemon:
         daemonize("/tmp/%s_stderr.log" % os.path.basename(sys.argv[0]))
 
-    with open(args.Lock, "w") as lock:
+    if args.Restart:
+        restart(args)
+
+    with open(args.Lock, "r+") as lock:
         try:
             fcntl.lockf(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except IOError:
-            print("Another instance of %s is launched" % sys.argv[0])
-            exit(1)
+            perror("Another instance of %s is launched" % sys.argv[0])
+        lock.truncate()
+        lock.write(str(os.getpid()))
+        lock.flush()
 
         main(args)
