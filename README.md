@@ -23,6 +23,11 @@ Supported extra symbols:
 
 For more info: "j --help"
 
+### Tips
+
+Missing or non-existent directories will be displayed dimmed and marked with '*'.
+However, if you press Enter twice, you will cd to the nearest existing directory.
+
 ### Example
 
 Type "j" and press Enter in the terminal to launch fastcd

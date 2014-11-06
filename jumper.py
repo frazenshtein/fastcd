@@ -85,6 +85,7 @@ class Display(object):
         self.PathFilter = None
         self.View = None
         self.CaseSensitive = False
+        self.PrevSelectedMissingPath = ""
 
         with open(pathsFile) as file:
             for line in file.readlines():
@@ -128,12 +129,20 @@ class Display(object):
             selectedItem = self.ListBox.get_focus()[0]
             if selectedItem:
                 path = selectedItem.Path
-                if os.path.islink(path):
+                # Double Enter should return nearest path
+                if path == self.PrevSelectedMissingPath:
+                    while path:
+                        path, tail = os.path.split(path)
+                        if os.path.exists(path):
+                            break
+                elif os.path.islink(path):
                     path = os.readlink(path)
                     if not os.path.exists(path):
+                        self.PrevSelectedMissingPath = path
                         self.InfoText.set_text("Link refers to the not existing directory: '%s'" % path)
                         return
                 elif not os.path.exists(path):
+                    self.PrevSelectedMissingPath = path
                     self.InfoText.set_text("No such directory: '%s'" % path)
                     return
                 self.SelectedPath = path

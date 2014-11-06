@@ -41,7 +41,7 @@ def daemonize(stderr):
     os.dup2(se.fileno(), sys.stdout.fileno())
     os.dup2(se.fileno(), sys.stderr.fileno())
 
-def updatePathList(path, filename, limit=5000):
+def updatePathList(path, filename, limit=3000):
     if os.path.exists(filename):
         with open(filename) as file:
             paths = [l.strip() for l in file.readlines()]
