@@ -4,7 +4,17 @@ import os
 import re
 from argparse import ArgumentParser, RawTextHelpFormatter
 
-import urwid
+try:
+    import urwid
+except ImportError:
+    print("Cannot import urwid module. Install it first 'pip install --user urwid'")
+    exit(1)
+
+try:
+    import psutil
+except ImportError:
+    print("Cannot import psutil module for refresher.py. Install it first 'pip install --user psutil' and reload bashrc 'source ~/.bashrc'")
+    exit(1)
 
 DESC = '''
 Jumper shows you the last visited directories, with the ability to quickly cd.

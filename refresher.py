@@ -65,8 +65,7 @@ def getShells(shellDaemons, shell="bash"):
     shells = []
     for proc in psutil.process_iter():
         try:
-            name = getProcessExe(proc).rsplit(os.sep, 1)[1]
-            if name in shellDaemons:
+            if proc.name in shellDaemons:
                 for candidate in proc.get_children():
                     if getProcessExe(candidate).endswith(shell):
                         shells.append(candidate)
