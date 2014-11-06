@@ -6,7 +6,7 @@ fastcd
 These scripts allow you to quickly navigate to the desired directory that has been recently visited.
 The utility was written because of the great longing for FarManager and it's plug-in alternative history.
 
-### USAGE
+### Usage
 
 Just type "j" in the terminal, press Enter and start typing the name of the desired directory.
 You can use arrows and Page Up/Down to navigate the list.
@@ -61,7 +61,7 @@ If you close and open terminal or open another one and launch fastcd ("j") you w
 
 Now you can just press Enter to cd to the last visited directory
 
-### INSTALLATION
+### Installation
 
 Requires bash + python 2.7 + extra modules
 Just type the following to install required python modules:
