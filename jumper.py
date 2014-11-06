@@ -31,23 +31,30 @@ def parseCommandLine():
     return args
 
 
-class ItemWidget(urwid.WidgetWrap):
+class PathWidget(urwid.WidgetWrap):
 
-    def __init__(self, label, subline=None):
-        self.Label = label
+    def __init__(self, path, subline=None):
+        self.Path = path
         self.Subline = subline
-        items = [
-            # ('fixed', 5, urwid.AttrWrap(urwid.Text("  ->"), 'selected', 'common')),
-            ('fixed', 2, urwid.Text(""))
-        ]
+
+        if os.path.exists(self.Path):
+            color = 'body'
+            items = [
+                ('fixed', 2, urwid.Text(""))
+            ]
+        else:
+            color = 'missing'
+            items = [
+                ('fixed', 2, urwid.Text("*"))
+            ]
+
         if self.Subline:
-            before, match, after = self.Label.partition(self.Subline)
-            text = urwid.AttrWrap(urwid.Text([before, ('match', match), after]), 'body', 'common')
+            before, match, after = self.Path.partition(self.Subline)
+            text = urwid.AttrWrap(urwid.Text([before, ('match', match), after]), color, 'common')
             items.append(text)
         else:
-            items.append(urwid.AttrWrap(urwid.Text(self.Label), 'body', 'common'))
-
-        super(ItemWidget, self).__init__(urwid.Columns(items, focus_column=1))
+            items.append(urwid.AttrWrap(urwid.Text(self.Path), color, 'common'))
+        super(PathWidget, self).__init__(urwid.Columns(items, focus_column=1))
 
     def selectable(self):
         return True
@@ -74,7 +81,7 @@ class Display(object):
                 self.Paths.append(line.strip())
 
     def Run(self):
-        listWalker = urwid.SimpleListWalker([ItemWidget(p) for p in self.Paths])
+        listWalker = urwid.SimpleListWalker([PathWidget(p) for p in self.Paths])
         self.ListBox = urwid.ListBox(listWalker)
         if self.Paths:
             self.ListBox.set_focus(0)
@@ -88,6 +95,7 @@ class Display(object):
             ('body',    'light gray',   'default',      'standout'),
             ('match',   'black',        'dark cyan',    'standout'),
             ('common',  'light blue',   'default',      'standout'),
+            ('missing', 'dark gray',    'default',      'standout'),
             ('input',   'light gray',   'default',      'standout'),
             ('info',    'dark red',     'default',      'standout'),
         ]
@@ -108,7 +116,7 @@ class Display(object):
         if input is 'enter':
             selectedItem = self.ListBox.get_focus()[0]
             if selectedItem:
-                path = selectedItem.Label
+                path = selectedItem.Path
                 if os.path.islink(path):
                     path = os.readlink(path)
                     if not os.path.exists(path):
@@ -147,7 +155,7 @@ class Display(object):
         for path in self.Paths:
             match = regex.search(path)
             if match:
-                newItems.append(ItemWidget(path, match.group(0)))
+                newItems.append(PathWidget(path, match.group(0)))
 
         listWalker = urwid.SimpleListWalker(newItems)
 
