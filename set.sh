@@ -12,7 +12,7 @@ python $REFRESHERTOOL --daemon
 # Set (J)umper
 function j {
     PATHFILE="/tmp/`date +%s`.path"
-    python $JUMPERTOOL -o $PATHFILE $@
+    python $JUMPERTOOL --escape-spaces -o $PATHFILE $@
     if [[ $@ == "--help" ]] || [[ $@ == "-h" ]]
     then
         :

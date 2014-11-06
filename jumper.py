@@ -36,6 +36,7 @@ def parseCommandLine():
     parser = ArgumentParser(description=DESC, formatter_class=RawTextHelpFormatter)
     parser.add_argument("-i", "--input", dest="Input", metavar="FILE", default="~/.fastcd")
     parser.add_argument("-o", "--output", dest="Output", metavar="FILE", default=None)
+    parser.add_argument("--escape-spaces", dest="EscapeSpaces", action='store_true')
 
     args = parser.parse_args()
     args.Input = expanduser(args.Input)
@@ -201,6 +202,8 @@ def main(args):
     display.Run()
 
     selectedPath = display.GetSelectedPath()
+    if args.EscapeSpaces:
+        selectedPath = selectedPath.replace(" ", "\ ")
     if args.Output:
         with open(args.Output, "w") as file:
             file.write(selectedPath)
