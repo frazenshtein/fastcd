@@ -85,11 +85,11 @@ class Display(object):
         self.View = urwid.Frame(self.ListBox, header=self.Header)
 
         palette = [
-            ('body',    'light gray',   'black',        'standout'),
+            ('body',    'light gray',   'default',      'standout'),
             ('match',   'black',        'dark cyan',    'standout'),
-            ('common',  'light blue',   'black',        'standout'),
-            ('input',   'light gray',   'black',        'standout'),
-            ('info',    'dark red',     'black',        'standout'),
+            ('common',  'light blue',   'default',      'standout'),
+            ('input',   'light gray',   'default',      'standout'),
+            ('info',    'dark red',     'default',      'standout'),
         ]
 
         loop = urwid.MainLoop(self.View, palette, unhandled_input=self.InputHandler, handle_mouse=False)
