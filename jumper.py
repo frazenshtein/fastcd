@@ -33,11 +33,11 @@ def parseCommandLine():
 
 class PathWidget(urwid.WidgetWrap):
 
-    def __init__(self, path, subline=None):
+    def __init__(self, path, subline=None, exists=True):
         self.Path = path
         self.Subline = subline
 
-        if os.path.exists(self.Path):
+        if exists:
             color = 'body'
             items = [
                 ('fixed', 2, urwid.Text(""))
@@ -78,10 +78,11 @@ class Display(object):
 
         with open(pathsFile) as file:
             for line in file.readlines():
-                self.Paths.append(line.strip())
+                line = line.strip()
+                self.Paths.append((line, os.path.exists(line)))
 
     def Run(self):
-        listWalker = urwid.SimpleListWalker([PathWidget(p) for p in self.Paths])
+        listWalker = urwid.SimpleListWalker([PathWidget(path, exists=exists) for path, exists in self.Paths])
         self.ListBox = urwid.ListBox(listWalker)
         if self.Paths:
             self.ListBox.set_focus(0)
@@ -147,15 +148,15 @@ class Display(object):
             r"\$": "$",
         }
         inputText = re.escape(inputText)
-        for k ,v in validSpecialSymbols.items():
+        for k, v in validSpecialSymbols.items():
             inputText = inputText.replace(k, v)
 
         reFlags = 0 if self.CaseSensitive else re.IGNORECASE
         regex = re.compile(inputText, reFlags)
-        for path in self.Paths:
+        for path, exists in self.Paths:
             match = regex.search(path)
             if match:
-                newItems.append(PathWidget(path, match.group(0)))
+                newItems.append(PathWidget(path, match.group(0), exists=exists))
 
         listWalker = urwid.SimpleListWalker(newItems)
 
