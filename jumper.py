@@ -105,8 +105,8 @@ class Display(object):
 
         palette = [
             ('body',    'light gray',   'default',      'standout'),
-            ('match',   'black',        'dark cyan',    'standout'),
-            ('common',  'light blue',   'default',      'standout'),
+            ('match',   'dark cyan',    'default',      'standout'),
+            ('common',  'black',        'light gray',   'standout'),
             ('missing', 'dark gray',    'default',      'standout'),
             ('input',   'light gray',   'default',      'standout'),
             ('info',    'dark red',     'default',      'standout'),
