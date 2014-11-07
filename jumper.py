@@ -105,17 +105,18 @@ class Display(object):
         self.PathFilter = urwid.AttrWrap(urwid.Edit('Fastcd to: '), 'input')
         self.InfoText = urwid.Text("")
         self.Header = urwid.Pile([self.PathFilter, urwid.Padding(urwid.AttrWrap(self.InfoText, 'info'), left=2)])
-        self.View = urwid.Frame(self.ListBox, header=self.Header)
+        self.View = urwid.AttrWrap(urwid.Frame(self.ListBox, header=self.Header), 'bg')
 
+        bgColor = 'default'
         palette = [
-            ('body',    'light gray',   'default',      'standout'),
-            ('match',   'dark cyan',    'default',      'standout'),
-            ('common',  'black',        'dark cyan',   'standout'),
-            ('missing', 'dark gray',    'default',      'standout'),
-            ('input',   'light gray',   'default',      'standout'),
-            ('info',    'dark red',     'default',      'standout'),
+            ('bg',      bgColor,        bgColor,      'standout'),
+            ('body',    'light gray',   bgColor,      'standout'),
+            ('match',   'dark cyan',    bgColor,      'standout'),
+            ('common',  'black',        'dark cyan',  'standout'),
+            ('missing', 'dark gray',    bgColor,      'standout'),
+            ('input',   'light gray',   bgColor,      'standout'),
+            ('info',    'dark red',     bgColor,      'standout'),
         ]
-
         loop = urwid.MainLoop(self.View, palette, unhandled_input=self.InputHandler, handle_mouse=False)
         loop.run()
 
@@ -135,7 +136,7 @@ class Display(object):
         if not isinstance(input, str):
             return input
 
-        if input is 'esc':
+        if input in ['esc', 'f10']:
             raise urwid.ExitMainLoop()
 
         if input is 'enter':

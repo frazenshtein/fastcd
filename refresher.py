@@ -57,16 +57,26 @@ def updatePathList(path, filename, limit=3000):
         for path in paths:
             file.write("%s\n" % path)
 
-def getProcessExe(proc):
+def pstuilProcMethod(proc, method):
+    val = getattr(proc, method)
     if psutil.__version__.startswith("1"):
-        return proc.exe
-    return proc.exe()
+        return val
+    return val()
+
+def getProcessExe(proc):
+    pstuilProcMethod(proc, "exe")
+
+def getProcessName(proc):
+    pstuilProcMethod(proc, "name")
+
+def getProcessCmdline(proc):
+    pstuilProcMethod(proc, "cmdline")
 
 def getShells(shellDaemons, shell="bash"):
     shells = []
     for proc in psutil.process_iter():
         try:
-            if proc.name in shellDaemons:
+            if getProcessName(proc) in shellDaemons:
                 for candidate in proc.get_children():
                     if getProcessExe(candidate).endswith(shell):
                         shells.append(candidate)
@@ -141,7 +151,7 @@ def restart(args):
         if pid:
             try:
                 proc = psutil.Process(int(pid))
-                if proc.name == "python" and os.path.basename(sys.argv[0]) in proc.cmdline:
+                if getProcessName(proc) == "python" and os.path.basename(sys.argv[0]) in getProcessCmdline(proc):
                     proc.terminate()
                     proc.wait()
             except psutil.NoSuchProcess: pass
