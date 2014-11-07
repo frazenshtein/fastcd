@@ -10,7 +10,7 @@ The utility was written because of the great longing for FarManager and it's plu
 
 Just type "j" in the terminal, press Enter and start typing the name of the desired directory.
 You can use arrows and Page Up/Down to navigate the list.
-Press Esc to exit.
+Press Esc or F10 to exit.
 Press Enter to change directory.
 Start typing to filter directories.
 Press Tab to turn on/off case sensitive search.
