@@ -64,13 +64,13 @@ def pstuilProcMethod(proc, method):
     return val()
 
 def getProcessExe(proc):
-    pstuilProcMethod(proc, "exe")
+    return pstuilProcMethod(proc, "exe")
 
 def getProcessName(proc):
-    pstuilProcMethod(proc, "name")
+    return pstuilProcMethod(proc, "name")
 
 def getProcessCmdline(proc):
-    pstuilProcMethod(proc, "cmdline")
+    return pstuilProcMethod(proc, "cmdline")
 
 def getShells(shellDaemons, shell="bash"):
     shells = []
@@ -165,7 +165,8 @@ if __name__ == '__main__':
     if args.Restart:
         restart(args)
 
-    with open(args.Lock, "r+") as lock:
+    mode = "r+" if os.path.exists(args.Lock) else "w+"
+    with open(args.Lock, mode) as lock:
         try:
             fcntl.lockf(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except IOError:
