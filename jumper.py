@@ -2,6 +2,7 @@
 
 import os
 import re
+import signal
 from os.path import expanduser
 from argparse import ArgumentParser, RawTextHelpFormatter
 
@@ -20,16 +21,19 @@ except ImportError:
 DESC = '''
 Jumper shows you the last visited directories, with the ability to quickly cd.
 You can use arrows and Page Up/Down to navigate the list.
-Press Esc to exit.
-Press Enter to change directory.
 Start typing to filter directories.
-Press Tab to turn on/off case sensitive search.
+
+Press 'Esc', 'F10' or 'Meta'+'q' to exit.
+Press 'Enter' to change directory.
+Press 'Meta'+'s' to turn on/off case sensitive search.
+Press 'Tab'/'Shift'+'Tab' to move search forward/backward.
 
 Supported extra symbols:
 
     * - any number of any character
     ? - any character
     $ - end of path
+
 '''
 
 def parseCommandLine():
@@ -45,9 +49,15 @@ def parseCommandLine():
 
 class PathWidget(urwid.WidgetWrap):
 
-    def __init__(self, path, subline=None, exists=True):
-        self.Path = path
-        self.Subline = subline
+    def __init__(self, path="", exists=True):
+        self.Path = None
+
+        if isinstance(path, str):
+            self.Path = path
+        elif isinstance(path, tuple):
+            self.Path = "".join(path)
+        else:
+            raise TypeError("Path must be str or three-element tuple")
 
         if exists:
             color = 'body'
@@ -60,13 +70,16 @@ class PathWidget(urwid.WidgetWrap):
                 ('fixed', 2, urwid.Text("*"))
             ]
 
-        if self.Subline:
-            before, match, after = self.Path.partition(self.Subline)
+        if isinstance(path, tuple):
+            before, match, after = path
             text = urwid.AttrWrap(urwid.Text([before, ('match', match), after]), color, 'common')
             items.append(text)
         else:
-            items.append(urwid.AttrWrap(urwid.Text(self.Path), color, 'common'))
+            items.append(urwid.AttrWrap(urwid.Text(path), color, 'common'))
         super(PathWidget, self).__init__(urwid.Columns(items, focus_column=1))
+
+    def GetPath(self):
+        return self.Path
 
     def selectable(self):
         return True
@@ -87,6 +100,7 @@ class Display(object):
         self.PathFilter = None
         self.View = None
         self.CaseSensitive = False
+        self.SearchOffset = 0
         self.PrevSelectedMissingPath = ""
 
         with open(pathsFile) as file:
@@ -94,6 +108,12 @@ class Display(object):
                 path = line.strip()
                 exists = os.path.exists(expanduser(path))
                 self.Paths.append((path, exists))
+
+        signal.signal(signal.SIGINT, Display.hanlderSIGINT)
+
+    @staticmethod
+    def hanlderSIGINT(signum, frame):
+        raise urwid.ExitMainLoop()
 
     def Run(self):
         widgets = [PathWidget(path, exists=exists) for path, exists in self.Paths]
@@ -136,13 +156,13 @@ class Display(object):
         if not isinstance(input, str):
             return input
 
-        if input in ['esc', 'f10']:
+        if input in ['esc', 'f10', 'meta q']:
             raise urwid.ExitMainLoop()
 
-        if input is 'enter':
+        if input == 'enter':
             selectedItem = self.ListBox.get_focus()[0]
             if selectedItem:
-                path = expanduser(selectedItem.Path)
+                path = expanduser(selectedItem.GetPath())
                 # Double Enter should return nearest path
                 if path == self.PrevSelectedMissingPath:
                     while path:
@@ -162,15 +182,29 @@ class Display(object):
                 self.SelectedPath = path
             raise urwid.ExitMainLoop()
 
-        if input is 'tab':
+        if input == 'meta s':
             self.CaseSensitive = not self.CaseSensitive
+
+        if input == 'tab':
+            self.SearchOffset += 1
+
+        if input == 'shift tab':
+            self.SearchOffset -= 1
+            if self.SearchOffset < 0:
+                self.SearchOffset = 0
 
         # Clean up header
         self.InfoText.set_text("")
 
         # Display input
         self.PathFilter.keypress((20,), input)
+        # Remove offset if there is no output
+        if not self.PathFilter.get_edit_text():
+            self.SearchOffset = 0
 
+        self.UpdateLixtBox()
+
+    def UpdateLixtBox(self):
         # Filter list
         newItems = []
         inputText = self.PathFilter.get_edit_text()
@@ -183,13 +217,20 @@ class Display(object):
         inputText = re.escape(inputText)
         for k, v in validSpecialSymbols.items():
             inputText = inputText.replace(k, v)
-
         reFlags = 0 if self.CaseSensitive else re.IGNORECASE
         regex = re.compile(inputText, reFlags)
+
         for path, exists in self.Paths:
-            match = regex.search(path)
-            if match:
-                newItems.append(PathWidget(path, match.group(0), exists=exists))
+            for counter, match in enumerate(regex.finditer(path)):
+                if counter >= self.SearchOffset:
+                    # before, match, after
+                    path = (path[:match.start(0)], match.group(0), path[match.end(0):])
+                    newItems.append(PathWidget(path, exists=exists))
+                    break
+
+        if self.SearchOffset and len(newItems) == 0:
+            self.SearchOffset -= 1
+            return self.UpdateLixtBox()
 
         listWalker = urwid.SimpleListWalker(newItems)
 
@@ -204,7 +245,7 @@ def main(args):
 
     selectedPath = display.GetSelectedPath()
     if args.EscapeSpaces:
-        selectedPath = selectedPath.replace(" ", "\ ")
+        selectedPath = selectedPath.replace(" ", r"\ ")
     if args.Output:
         with open(args.Output, "w") as file:
             file.write(selectedPath)

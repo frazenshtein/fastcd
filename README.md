@@ -10,10 +10,12 @@ The utility was written because of the great longing for FarManager and it's plu
 
 Just type "j" in the terminal, press Enter and start typing the name of the desired directory.
 You can use arrows and Page Up/Down to navigate the list.
-Press Esc or F10 to exit.
-Press Enter to change directory.
 Start typing to filter directories.
-Press Tab to turn on/off case sensitive search.
+
+Press 'Esc', 'F10' or 'Meta'+'q' to exit.
+Press 'Enter' to change directory.
+Press 'Meta'+'s' to turn on/off case sensitive search.
+Press 'Tab'/'Shift'+'Tab' to move search forward/backward.
 
 Supported extra symbols:
 
@@ -34,28 +36,40 @@ Type "j" and press Enter in the terminal to launch fastcd
 
     Fastcd to:
 
-    ->  /home/frazenshtein/Soft
-        /home/frazenshtein/Soft/fastcd/.git
+    ->  ~/Soft/FastCd/tests
+        ~/Soft/FastCd/tests/temp
+        ~/Soft/FastCd/fastcd/.git
         /usr/lib/pyhon2.7
-        /home/frazenshtein/Soft/fastcd/
+        ~/Soft/FastCd/fastcd/
         /usr/lib
 
 Type "fa" to filter list of directories
 
     Fastcd to: fa
 
-    ->  /home/frazenshtein/Soft/fastcd/.git
-        /home/frazenshtein/Soft/fastcd
+    ->  ~/Soft/FastCd/tests
+        ~/Soft/FastCd/tests/temp
+        ~/Soft/FastCd/fastcd/.git
+        ~/Soft/FastCd/fastcd
+        
+Press "Tab" to move search forward (to match second "fa" in path - it's equal to "fa*fa")
 
-Press Down and Enter to cd to /home/frazenshtein/Soft/fastcd
+    Fastcd to: fa
+
+    ->  ~/Soft/FastCd/fastcd/.git
+        ~/Soft/FastCd/fastcd
+        
+
+Press Down and Enter to cd to ~/Soft/fastcd
 
 If you close and open terminal or open another one and launch fastcd ("j") you will get updated list of directories
 
     Fastcd to:
 
-    ->  /home/frazenshtein/Soft/fastcd
-        /home/frazenshtein/Soft
-        /home/frazenshtein/Soft/fastcd/.git
+    ->  ~/Soft/FastCd/fastcd
+        ~/Soft/FastCd/tests
+        ~/Soft/FastCd/tests/temp
+        ~/Soft/FastCd/fastcd/.git
         /usr/lib/pyhon2.7
         /usr/lib
 
