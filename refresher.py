@@ -4,21 +4,19 @@ import os
 import sys
 import time
 import fcntl
+from os.path import expanduser
 from argparse import ArgumentParser
 
 import psutil
 
+import helper
+
 def parseCommandLine():
     parser = ArgumentParser()
-    parser.add_argument("-o", "--output", dest="Output", metavar="FILE", default="~/.fastcd")
-    parser.add_argument("--path-timeout", dest="PathTimeout", metavar="FLOAT", default=0.2)
-    parser.add_argument("--process-timeout", dest="ProcessTimeout", metavar="FLOAT", default=5.0)
     parser.add_argument("--daemon", dest="Daemon", action="store_true")
     parser.add_argument("--restart", dest="Restart", action="store_true")
 
     args = parser.parse_args()
-    args.Output = os.path.expanduser(args.Output)
-    args.Lock = args.Output + ".lock"
     return args
 
 def daemonize(stderr):
@@ -42,7 +40,7 @@ def daemonize(stderr):
     os.dup2(se.fileno(), sys.stdout.fileno())
     os.dup2(se.fileno(), sys.stderr.fileno())
 
-def updatePathList(path, filename, limit=3000):
+def updatePathList(path, filename, limit):
     if os.path.exists(filename):
         with open(filename) as file:
             paths = [l.strip() for l in file.readlines()]
@@ -72,7 +70,7 @@ def getProcessName(proc):
 def getProcessCmdline(proc):
     return pstuilProcMethod(proc, "cmdline")
 
-def getShells(shellDaemons, shell="bash"):
+def getShells(shellDaemons, shell):
     shells = []
     for proc in psutil.process_iter():
         try:
@@ -94,34 +92,17 @@ def getCwds(shells):
 def getCleanPath(path):
     return path.replace(" (deleted)", "")
 
-def getUserHomeDir():
-    return os.path.realpath(os.environ["HOME"])
-
-def replaceHomeWithTilde(path, home):
-    if path.startswith(home):
-        path = path.replace(home, "~")
-    return path
-
-def main(args):
-    daemons = [
-        "konsole",
-        "sshd",
-        "tmux",
-        "terminator",
-        "gnome-terminal",
-        "xfce4-terminal",
-    ]
-
+def main(config):
     shellTimeout = 0.0
-    timeout = args.PathTimeout
-    shells = getShells(daemons)
+    timeout = config["path_updater_delay"]
+    shells = getShells(config["terminal_emulators"], config["shell"])
     lastCwds = getCwds(shells)
-    userHome = getUserHomeDir()
+    userHome = helper.getUserHomeDir()
 
-    if not os.path.exists(args.Output):
+    if not os.path.exists(config["paths_history"]):
         for path in lastCwds.values():
-            path = replaceHomeWithTilde(path, userHome)
-            updatePathList(path, args.Output)
+            path = helper.replaceHomeWithTilde(path, userHome)
+            updatePathList(path, config["paths_history"], config["paths_history_limit"])
 
     while True:
         for proc in shells:
@@ -129,24 +110,24 @@ def main(args):
                 procCwd = getCleanPath(proc.getcwd())
                 if procCwd != lastCwds[proc.pid]:
                     lastCwds[proc.pid] = procCwd
-                    path = replaceHomeWithTilde(procCwd, userHome)
-                    updatePathList(path, args.Output)
+                    path = helper.replaceHomeWithTilde(procCwd, userHome)
+                    updatePathList(path, config["paths_history"], config["paths_history_limit"])
             except psutil.NoSuchProcess: pass
 
         time.sleep(timeout)
         shellTimeout += timeout
-        if shellTimeout >= args.ProcessTimeout:
+        if shellTimeout >= config["search_for_new_shells_delay"]:
             shellTimeout = 0.0
-            shells = getShells(daemons)
+            shells = getShells(config["terminal_emulators"], config["shell"])
             lastCwds = getCwds(shells)
 
 def perror(line):
     print(line)
     exit(1)
 
-def restart(args):
-    if os.path.exists(args.Lock):
-        with open(args.Lock) as file:
+def restart(lockfile):
+    if os.path.exists(lockfile):
+        with open(lockfile) as file:
             pid = file.read()
         if pid:
             try:
@@ -158,15 +139,18 @@ def restart(args):
 
 if __name__ == '__main__':
     args = parseCommandLine()
+    config = helper.loadConfig("refresher")
+    config["paths_history"] = expanduser(config["paths_history"])
+    lockfile = expanduser(config["paths_history"]) + ".lock"
 
     if args.Daemon:
         daemonize("/tmp/%s_stderr.log" % os.path.basename(sys.argv[0]))
 
     if args.Restart:
-        restart(args)
+        restart(lockfile)
 
-    mode = "r+" if os.path.exists(args.Lock) else "w+"
-    with open(args.Lock, mode) as lock:
+    mode = "r+" if os.path.exists(lockfile) else "w+"
+    with open(lockfile, mode) as lock:
         try:
             fcntl.lockf(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except IOError:
@@ -175,4 +159,4 @@ if __name__ == '__main__':
         lock.write(str(os.getpid()))
         lock.flush()
 
-        main(args)
+        main(config)

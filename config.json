@@ -1,0 +1,59 @@
+{
+    "common": {
+        "version": "0.1.39",
+        "paths_history": "~/.fastcd"
+    },
+
+    "jumper": {
+        "greeting_line": "Fastcd to: ",
+
+        "shortcuts": {
+            "exit": [
+                "esc",
+                "f10",
+                "meta q"
+            ],
+            "change_dir": [
+                "enter"
+            ],
+            "case_sensitive": [
+                "meta s"
+            ],
+            "inc_search_offset": [
+                "tab"
+            ],
+            "dec_search_offset": [
+                "shift tab"
+            ]
+        },
+
+        "palette": {
+            /* "text color / background color"
+               default - terminal's default color for text or bg */
+            "bg": "default/default",
+            "text": "light gray/default",
+            "selected": "black/dark cyan",
+            "match": "dark cyan/default",
+            "missing": "dark gray/default",
+            "input": "light gray/default",
+            "info": "dark red/default"
+        }
+    },
+
+    "refresher": {
+        "shell": "bash",
+
+        "search_for_new_shells_delay": 5.0,
+        "path_updater_delay": 0.2,
+        "paths_history_limit": 3000,
+
+        "terminal_emulators": [
+            "konsole",
+            "sshd",
+            "tmux",
+            "terminator",
+            "gnome-terminal",
+            "xfce4-terminal"
+        ]
+    }
+}

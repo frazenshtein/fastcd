@@ -18,6 +18,8 @@ except ImportError:
     print("Cannot import psutil module for refresher.py. Install it first 'pip install --user psutil' and reload bashrc 'source ~/.bashrc'")
     exit(1)
 
+import helper
+
 DESC = '''
 Jumper shows you the last visited directories, with the ability to quickly cd.
 You can use arrows and Page Up/Down to navigate the list.
@@ -38,12 +40,10 @@ Supported extra symbols:
 
 def parseCommandLine():
     parser = ArgumentParser(description=DESC, formatter_class=RawTextHelpFormatter)
-    parser.add_argument("-i", "--input", dest="Input", metavar="FILE", default="~/.fastcd")
     parser.add_argument("-o", "--output", dest="Output", metavar="FILE", default=None)
     parser.add_argument("--escape-spaces", dest="EscapeSpaces", action='store_true')
 
     args = parser.parse_args()
-    args.Input = expanduser(args.Input)
     return args
 
 
@@ -51,7 +51,6 @@ class PathWidget(urwid.WidgetWrap):
 
     def __init__(self, path="", exists=True):
         self.Path = None
-
         if isinstance(path, str):
             self.Path = path
         elif isinstance(path, tuple):
@@ -60,7 +59,7 @@ class PathWidget(urwid.WidgetWrap):
             raise TypeError("Path must be str or three-element tuple")
 
         if exists:
-            color = 'body'
+            color = 'text'
             items = [
                 ('fixed', 2, urwid.Text(""))
             ]
@@ -72,10 +71,10 @@ class PathWidget(urwid.WidgetWrap):
 
         if isinstance(path, tuple):
             before, match, after = path
-            text = urwid.AttrWrap(urwid.Text([before, ('match', match), after]), color, 'common')
+            text = urwid.AttrWrap(urwid.Text([before, ('match', match), after]), color, 'selected')
             items.append(text)
         else:
-            items.append(urwid.AttrWrap(urwid.Text(path), color, 'common'))
+            items.append(urwid.AttrWrap(urwid.Text(path), color, 'selected'))
         super(PathWidget, self).__init__(urwid.Columns(items, focus_column=1))
 
     def GetPath(self):
@@ -90,8 +89,9 @@ class PathWidget(urwid.WidgetWrap):
 
 class Display(object):
 
-    def __init__(self, pathsFile):
-        self.PathsFile = pathsFile
+    def __init__(self, config):
+        self.Config = config
+        self.Shortcuts = self.Config["shortcuts"]
         self.SelectedPath = os.getcwd()
         self.Paths = []
         self.Header = None
@@ -103,7 +103,7 @@ class Display(object):
         self.SearchOffset = 0
         self.PrevSelectedMissingPath = ""
 
-        with open(pathsFile) as file:
+        with open(expanduser(self.Config["paths_history"])) as file:
             for line in file.readlines():
                 path = line.strip()
                 exists = os.path.exists(expanduser(path))
@@ -122,44 +122,32 @@ class Display(object):
         if self.Paths:
             self.ListBox.set_focus(0)
 
-        self.PathFilter = urwid.AttrWrap(urwid.Edit('Fastcd to: '), 'input')
+        self.PathFilter = urwid.AttrWrap(urwid.Edit(self.Config["greeting_line"]), 'input')
         self.InfoText = urwid.Text("")
         self.Header = urwid.Pile([self.PathFilter, urwid.Padding(urwid.AttrWrap(self.InfoText, 'info'), left=2)])
         self.View = urwid.AttrWrap(urwid.Frame(self.ListBox, header=self.Header), 'bg')
 
-        bgColor = 'default'
-        palette = [
-            ('bg',      bgColor,        bgColor,      'standout'),
-            ('body',    'light gray',   bgColor,      'standout'),
-            ('match',   'dark cyan',    bgColor,      'standout'),
-            ('common',  'black',        'dark cyan',  'standout'),
-            ('missing', 'dark gray',    bgColor,      'standout'),
-            ('input',   'light gray',   bgColor,      'standout'),
-            ('info',    'dark red',     bgColor,      'standout'),
-        ]
+        palette = []
+        for name, values in self.Config["palette"].items():
+            text, bg = values.split("/")
+            entry = (name, text, bg, 'standout')
+            palette.append(entry)
+
         loop = urwid.MainLoop(self.View, palette, unhandled_input=self.InputHandler, handle_mouse=False)
         loop.run()
 
-    def GetUserHomeDir(self):
-        return os.path.realpath(os.environ["HOME"])
-
-    def ReplaceHomeWithTilde(self, path):
-        home = self.GetUserHomeDir()
-        if path.startswith(home):
-            path = path.replace(home, "~")
-        return path
-
     def GetSelectedPath(self):
-        return self.ReplaceHomeWithTilde(self.SelectedPath)
+        home = helper.getUserHomeDir()
+        return helper.replaceHomeWithTilde(self.SelectedPath, home)
 
     def InputHandler(self, input):
         if not isinstance(input, str):
             return input
 
-        if input in ['esc', 'f10', 'meta q']:
+        if input in self.Shortcuts["exit"]:
             raise urwid.ExitMainLoop()
 
-        if input == 'enter':
+        if input in self.Shortcuts["change_dir"]:
             selectedItem = self.ListBox.get_focus()[0]
             if selectedItem:
                 path = expanduser(selectedItem.GetPath())
@@ -182,13 +170,13 @@ class Display(object):
                 self.SelectedPath = path
             raise urwid.ExitMainLoop()
 
-        if input == 'meta s':
+        if input in self.Shortcuts["case_sensitive"]:
             self.CaseSensitive = not self.CaseSensitive
 
-        if input == 'tab':
+        if input in self.Shortcuts["inc_search_offset"]:
             self.SearchOffset += 1
 
-        if input == 'shift tab':
+        if input in self.Shortcuts["dec_search_offset"]:
             self.SearchOffset -= 1
             if self.SearchOffset < 0:
                 self.SearchOffset = 0
@@ -240,7 +228,8 @@ class Display(object):
 
 
 def main(args):
-    display = Display(args.Input)
+    config = helper.loadConfig("jumper")
+    display = Display(config)
     display.Run()
 
     selectedPath = display.GetSelectedPath()
