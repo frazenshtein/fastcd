@@ -67,8 +67,11 @@ def getProcessExe(proc):
 def getProcessName(proc):
     return pstuilProcMethod(proc, "name")
 
-def getProcessCmdline(proc):
-    return pstuilProcMethod(proc, "cmdline")
+def getProcessCmdline(proc, join=False):
+    cmdline = pstuilProcMethod(proc, "cmdline")
+    if join:
+        return " ".join(cmdline)
+    return cmdline
 
 def getShells(shellDaemons, shell):
     shells = []
@@ -132,7 +135,7 @@ def restart(lockfile):
         if pid:
             try:
                 proc = psutil.Process(int(pid))
-                if getProcessName(proc) == "python" and os.path.basename(sys.argv[0]) in getProcessCmdline(proc):
+                if getProcessName(proc) == "python" and os.path.basename(sys.argv[0]) in getProcessCmdline(proc, join=True):
                     proc.terminate()
                     proc.wait()
             except psutil.NoSuchProcess: pass
