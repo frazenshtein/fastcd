@@ -30,7 +30,7 @@ For more info: "j --help"
 Missing or non-existent directories will be displayed dimmed and marked with '*'.
 However, if you press Enter twice, you will cd to the nearest existing directory.
 
-If you want to redefine shortcuts, but don't know their key codes - use key_picker.py.
+If you want to redefine shortcuts (config.json), but don't know their key codes - use key_picker.py.
 
 ### Example
 
