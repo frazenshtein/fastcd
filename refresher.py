@@ -29,10 +29,6 @@ def daemonize(stderr):
     os.setsid()
     os.umask(0)
 
-    pid = os.fork()
-    if pid > 0:
-        sys.exit(0)
-
     # redirect standard file descriptors
     sys.stdout.flush()
     sys.stderr.flush()
