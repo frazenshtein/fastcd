@@ -92,7 +92,7 @@ class Display(object):
     def __init__(self, config):
         self.Config = config
         self.Shortcuts = self.Config["shortcuts"]
-        self.SelectedPath = os.getcwd()
+        self.SelectedPath = self.GetCwd()
         self.Paths = []
         self.Header = None
         self.InfoText = None
@@ -135,6 +135,13 @@ class Display(object):
 
         loop = urwid.MainLoop(self.View, palette, unhandled_input=self.InputHandler, handle_mouse=False)
         loop.run()
+
+    def GetCwd(self):
+        try:
+            return os.getcwd()
+        except OSError:
+            # Current directory removed
+            return expanduser("~")
 
     def GetSelectedPath(self):
         home = helper.getUserHomeDir()
