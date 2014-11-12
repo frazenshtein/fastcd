@@ -51,14 +51,13 @@ Type "fa" to filter list of directories
         ~/Soft/FastCd/tests/temp
         ~/Soft/FastCd/fastcd/.git
         ~/Soft/FastCd/fastcd
-        
+
 Press "Tab" to move search forward (to match second "fa" in path - it's equal to "fa*fa")
 
     Fastcd to: fa
 
     ->  ~/Soft/FastCd/fastcd/.git
         ~/Soft/FastCd/fastcd
-        
 
 Press Down and Enter to cd to ~/Soft/fastcd
 

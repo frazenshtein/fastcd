@@ -147,6 +147,9 @@ class Display(object):
         home = helper.getUserHomeDir()
         return helper.replaceHomeWithTilde(self.SelectedPath, home)
 
+    def IsShortcut(self, input):
+        return filter(lambda x: input in x, self.Shortcuts.values()) != []
+
     def InputHandler(self, input):
         if not isinstance(input, str):
             return input
@@ -191,11 +194,12 @@ class Display(object):
         # Clean up header
         self.InfoText.set_text("")
 
-        # Display input
-        self.PathFilter.keypress((20,), input)
-        # Remove offset if there is no output
-        if not self.PathFilter.get_edit_text():
-            self.SearchOffset = 0
+        # Display input if it is not a shortcut
+        if not self.IsShortcut(input):
+            self.PathFilter.keypress((20,), input)
+            # Remove offset if there is no output
+            if not self.PathFilter.get_edit_text():
+                self.SearchOffset = 0
 
         self.UpdateLixtBox()
 
