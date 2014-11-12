@@ -1,6 +1,6 @@
 {
     "common": {
-        "version": "0.1.45",
+        "version": "0.1.47",
         "paths_history": "~/.fastcd"
     },
 

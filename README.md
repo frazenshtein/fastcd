@@ -78,7 +78,7 @@ Now you can just press Enter to cd to the last visited directory
 
 ### Installation
 
-Requires bash + python 2.7 + extra modules
+Requires python 2.7 + extra modules
 Just type the following to install required python modules:
 
     pip install --user urwid psutil
