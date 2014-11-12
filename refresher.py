@@ -96,6 +96,10 @@ def getCleanPath(path):
     return path.replace(" (deleted)", "")
 
 def main(config):
+    def _updatePathList(path):
+        path = helper.replaceHomeWithTilde(path, userHome)
+        updatePathList(path, config["paths_history"], config["paths_history_limit"])
+
     shellTimeout = 0.0
     timeout = config["path_updater_delay"]
     shells = getShells(config["terminal_emulators"], config["shell"])
@@ -104,8 +108,7 @@ def main(config):
 
     if not os.path.exists(config["paths_history"]):
         for path in lastCwds.values():
-            path = helper.replaceHomeWithTilde(path, userHome)
-            updatePathList(path, config["paths_history"], config["paths_history_limit"])
+            _updatePathList(path)
 
     while True:
         for proc in shells:
@@ -113,8 +116,7 @@ def main(config):
                 procCwd = getCleanPath(proc.getcwd())
                 if procCwd != lastCwds[proc.pid]:
                     lastCwds[proc.pid] = procCwd
-                    path = helper.replaceHomeWithTilde(procCwd, userHome)
-                    updatePathList(path, config["paths_history"], config["paths_history_limit"])
+                    _updatePathList(procCwd)
             except psutil.NoSuchProcess: pass
 
         time.sleep(timeout)
@@ -122,7 +124,12 @@ def main(config):
         if shellTimeout >= config["search_for_new_shells_delay"]:
             shellTimeout = 0.0
             shells = getShells(config["terminal_emulators"], config["shell"])
-            lastCwds = getCwds(shells)
+            newCwds = getCwds(shells)
+            # Get paths of new shells
+            paths = set(newCwds.values()).difference(lastCwds.values())
+            for path in paths:
+                _updatePathList(path)
+            lastCwds = newCwds
 
 def perror(line):
     print(line)
