@@ -201,7 +201,8 @@ class Display(object):
             if not self.PathFilter.get_edit_text():
                 self.SearchOffset = 0
 
-        self.UpdateLixtBox()
+        if input not in ["up", "down", "left", "right"]:
+            self.UpdateLixtBox()
 
     def UpdateLixtBox(self):
         # Filter list
