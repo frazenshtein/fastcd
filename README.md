@@ -34,8 +34,8 @@ If you want to redefine shortcuts (config.json), but don't know their key codes 
 
 Your current path in shell will be first in list,
 while the previous path (OLDPWD) will be the second.
-The default is selected the previous path.
-Thus fastcd (j) + enter is equivalent to "cd -"
+Previous path is selected by default.
+Thus fastcd (j) + enter is equivalent to "cd -".
 
 ### Example
 
