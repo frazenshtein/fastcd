@@ -120,7 +120,11 @@ class Display(object):
         listWalker = urwid.SimpleListWalker(widgets)
         self.ListBox = urwid.ListBox(listWalker)
         if self.Paths:
-            self.ListBox.set_focus(0)
+            if len(self.Paths) > 1:
+                # Previous directory should be selected by default
+                self.ListBox.set_focus(1)
+            else:
+                self.ListBox.set_focus(0)
 
         self.PathFilter = urwid.AttrWrap(urwid.Edit(self.Config["greeting_line"]), 'input')
         self.InfoText = urwid.Text("")
