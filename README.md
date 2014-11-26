@@ -32,6 +32,11 @@ However, if you press Enter twice, you will cd to the nearest existing directory
 
 If you want to redefine shortcuts (config.json), but don't know their key codes - use key_picker.py.
 
+Your current path in shell will be first in list,
+while the previous path (OLDPWD) will be the second.
+The default is selected the previous path.
+Thus fastcd (j) + enter is equivalent to "cd -"
+
 ### Example
 
 Type "j" and press Enter in the terminal to launch fastcd
@@ -78,7 +83,7 @@ Now you can just press Enter to cd to the last visited directory
 
 ### Installation
 
-Requires python 2.7 + extra modules
+Requires python 2.7 + extra modules.
 Just type the following to install required python modules:
 
     pip install --user urwid psutil
