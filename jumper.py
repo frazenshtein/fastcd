@@ -90,10 +90,9 @@ class PathWidget(urwid.WidgetWrap):
 class Display(object):
 
     def __init__(self, config):
-        cwd = self.GetCwd()
         self.Config = config
         self.Shortcuts = self.Config["shortcuts"]
-        self.SelectedPath = cwd
+        self.SelectedPath = self.GetCwd()
         self.Paths = []
         self.Header = None
         self.InfoText = None
@@ -104,17 +103,21 @@ class Display(object):
         self.SearchOffset = 0
         self.PrevSelectedMissingPath = ""
 
-        oldpwd = os.environ["OLDPWD"]
+        home = helper.getUserHomeDir()
+        cwd = helper.replaceHomeWithTilde(self.GetCwd(), home)
+        oldpwd = helper.replaceHomeWithTilde(os.environ.get("OLDPWD", cwd), home)
+
         with open(expanduser(self.Config["paths_history"])) as file:
             for line in file.readlines():
                 path = line.strip()
-                if expanduser(path) in [cwd, oldpwd]:
+                if path in [cwd, oldpwd]:
                     continue
                 exists = os.path.exists(expanduser(path))
                 self.Paths.append((path, exists))
         # Cwd always first, prev path in the current shell always second
-        self.Paths.insert(0, (cwd, os.path.exists(cwd)))
-        self.Paths.insert(1, (oldpwd, os.path.exists(oldpwd)))
+        self.Paths.insert(0, (cwd, os.path.exists(expanduser(cwd))))
+        if cwd != oldpwd:
+            self.Paths.insert(1, (oldpwd, os.path.exists(expanduser(oldpwd))))
 
         signal.signal(signal.SIGINT, Display.hanlderSIGINT)
 
