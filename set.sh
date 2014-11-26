@@ -19,8 +19,13 @@ function j {
     else
         OUTPUTPATH=`cat $PATHFILE`
         rm $PATHFILE
-        # Eval is required to interpolate ~
-        eval cd $OUTPUTPATH
+        if [[ -z "$OUTPUTPATH" ]]
+        then
+            :
+        else
+            # Eval is required to interpolate ~
+            eval cd $OUTPUTPATH
+        fi
     fi
 }
 alias j='j'

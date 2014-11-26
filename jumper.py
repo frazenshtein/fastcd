@@ -92,7 +92,7 @@ class Display(object):
     def __init__(self, config):
         self.Config = config
         self.Shortcuts = self.Config["shortcuts"]
-        self.SelectedPath = self.GetCwd()
+        self.SelectedPath = ""
         self.Paths = []
         self.Header = None
         self.InfoText = None
@@ -158,6 +158,8 @@ class Display(object):
             return expanduser("~")
 
     def GetSelectedPath(self):
+        if not self.SelectedPath:
+            return ""
         home = helper.getUserHomeDir()
         return helper.replaceHomeWithTilde(self.SelectedPath, home)
 
