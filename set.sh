@@ -13,16 +13,12 @@ python $REFRESHERTOOL --daemon
 function j {
     PATHFILE="/tmp/`date +%s`.path"
     python $JUMPERTOOL --escape-spaces -o $PATHFILE $@
-    if [[ $@ == "--help" ]] || [[ $@ == "-h" ]]
+    if [[ ! $@ == "--help" ]] && [[ ! $@ == "-h" ]]
     then
-        :
-    else
         OUTPUTPATH=`cat $PATHFILE`
         rm $PATHFILE
-        if [[ -z "$OUTPUTPATH" ]]
+        if [[ ! -z "$OUTPUTPATH" ]]
         then
-            :
-        else
             # Eval is required to interpolate ~
             eval cd $OUTPUTPATH
         fi
