@@ -102,6 +102,7 @@ class Display(object):
         self.CaseSensitive = False
         self.SearchOffset = 0
         self.PrevSelectedMissingPath = ""
+        self.DefaultSelectedItemIndex = 0
 
         home = helper.getUserHomeDir()
         cwd = helper.replaceHomeWithTilde(self.GetCwd(), home)
@@ -118,6 +119,8 @@ class Display(object):
         self.Paths.insert(0, (cwd, os.path.exists(expanduser(cwd))))
         if cwd != oldpwd:
             self.Paths.insert(1, (oldpwd, os.path.exists(expanduser(oldpwd))))
+            # Previous directory should be selected by default
+            self.DefaultSelectedItemIndex = 1
 
         signal.signal(signal.SIGINT, Display.hanlderSIGINT)
 
@@ -130,11 +133,7 @@ class Display(object):
         listWalker = urwid.SimpleListWalker(widgets)
         self.ListBox = urwid.ListBox(listWalker)
         if self.Paths:
-            if len(self.Paths) > 1:
-                # Previous directory should be selected by default
-                self.ListBox.set_focus(1)
-            else:
-                self.ListBox.set_focus(0)
+            self.ListBox.set_focus(self.DefaultSelectedItemIndex)
 
         self.PathFilter = urwid.AttrWrap(urwid.Edit(self.Config["greeting_line"]), 'input')
         self.InfoText = urwid.Text("")
