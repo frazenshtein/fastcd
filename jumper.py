@@ -41,7 +41,7 @@ Supported extra symbols:
 def parseCommandLine():
     parser = ArgumentParser(description=DESC, formatter_class=RawTextHelpFormatter)
     parser.add_argument("-o", "--output", dest="Output", metavar="FILE", default=None)
-    parser.add_argument("--escape-spaces", dest="EscapeSpaces", action='store_true')
+    parser.add_argument("--escape-special-symbols", dest="EscapeSpecialSymbols", action='store_true')
 
     args = parser.parse_args()
     return args
@@ -260,8 +260,10 @@ def main(args):
     display.Run()
 
     selectedPath = display.GetSelectedPath()
-    if args.EscapeSpaces:
-        selectedPath = selectedPath.replace(" ", r"\ ")
+    if args.EscapeSpecialSymbols:
+        symbols = [" ", "(", ")"]
+        for symbol in symbols:
+            selectedPath = selectedPath.replace(symbol, "\\" + symbol)
     if args.Output:
         with open(args.Output, "w") as file:
             file.write(selectedPath)
