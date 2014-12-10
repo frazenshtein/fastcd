@@ -84,8 +84,10 @@ def getShells(shellDaemons, shell):
         try:
             if getProcessName(proc) in shellDaemons:
                 for candidate in proc.get_children():
-                    if getProcessExe(candidate).endswith(shell):
-                        shells.append(candidate)
+                    try:
+                        if getProcessExe(candidate).endswith(shell):
+                            shells.append(candidate)
+                    except (psutil.NoSuchProcess, psutil.AccessDenied): pass
         except (psutil.NoSuchProcess, psutil.AccessDenied): pass
     return shells
 
@@ -107,6 +109,9 @@ def prepareEnvironment(config):
         dirname = os.path.dirname(path)
         if not os.path.exists(dirname):
             os.makedirs(dirname)
+        # Create file
+        with open(path, "w"):
+            pass
 
 def main(config):
     def _updatePathList(path):
