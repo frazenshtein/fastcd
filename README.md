@@ -16,6 +16,8 @@ Press 'Esc', 'F10' or 'Meta'+'q' to exit.
 Press 'Enter' to change directory.
 Press 'Meta'+'s' to turn on/off case sensitive search.
 Press 'Tab'/'Shift'+'Tab' to move search forward/backward.
+Press 'Shift'+'F2'-'F8' to set selected path as shortcut.
+Press 'F2'-'F8' to navigate to the directory where the shortcut points.
 
 Supported extra symbols:
 
@@ -36,6 +38,8 @@ Your current path in shell will be first in list,
 while the previous path (OLDPWD) will be the second.
 Previous path is selected by default.
 Thus fastcd (j) + enter is equivalent to "cd -".
+
+Type 'j -l' to list shortcuts and directories to which they point.
 
 ### Example
 

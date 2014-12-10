@@ -7,7 +7,12 @@ import fcntl
 from os.path import expanduser
 from argparse import ArgumentParser
 
-import psutil
+try:
+    import psutil
+except ImportError:
+    print("Cannot import psutil module. Install it first 'pip install --user psutil' and reload bashrc 'source ~/.bashrc'")
+    exit(1)
+
 
 import helper
 
@@ -29,7 +34,7 @@ def daemonize(filename):
     # decouple from parent environment
     os.chdir("/")
     os.setsid()
-    os.umask(0o077)
+    os.umask(0)
 
     # redirect standard file descriptors
     sys.stdout.flush()
@@ -95,16 +100,23 @@ def getCwds(shells):
 def getCleanPath(path):
     return path.replace(" (deleted)", "")
 
+def prepareEnvironment(config):
+    # Create directories
+    for param in ["paths_history", "stored_paths"]:
+        path = expanduser(config[param])
+        dirname = os.path.dirname(path)
+        if not os.path.exists(dirname):
+            os.makedirs(dirname)
+
 def main(config):
     def _updatePathList(path):
-        path = helper.replaceHomeWithTilde(path, userHome)
+        path = helper.replaceHomeWithTilde(path)
         updatePathList(path, config["paths_history"], config["paths_history_limit"])
 
     shellTimeout = 0.0
     timeout = config["path_updater_delay"]
     shells = getShells(config["terminal_emulators"], config["shell"])
     lastCwds = getCwds(shells)
-    userHome = helper.getUserHomeDir()
 
     if not os.path.exists(config["paths_history"]):
         for path in lastCwds.values():
@@ -153,9 +165,10 @@ if __name__ == '__main__':
     config["paths_history"] = expanduser(config["paths_history"])
     lockfile = expanduser(config["paths_history"]) + ".lock"
 
+    prepareEnvironment(config)
+
     if args.Daemon:
         daemonize(args.LogPath)
-
     if args.Restart:
         restart(lockfile)
 

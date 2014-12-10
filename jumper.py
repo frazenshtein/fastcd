@@ -12,12 +12,6 @@ except ImportError:
     print("Cannot import urwid module. Install it first 'pip install --user urwid'")
     exit(1)
 
-try:
-    import psutil
-except ImportError:
-    print("Cannot import psutil module for refresher.py. Install it first 'pip install --user psutil' and reload bashrc 'source ~/.bashrc'")
-    exit(1)
-
 import helper
 
 DESC = '''
@@ -29,6 +23,8 @@ Press 'Esc', 'F10' or 'Meta'+'q' to exit.
 Press 'Enter' to change directory.
 Press 'Meta'+'s' to turn on/off case sensitive search.
 Press 'Tab'/'Shift'+'Tab' to move search forward/backward.
+Press 'Shift'+'F2'-'F8' to set selected path as shortcut.
+Press 'F2'-'F8' to navigate to the directory where the shortcut points.
 
 Supported extra symbols:
 
@@ -40,6 +36,7 @@ Supported extra symbols:
 
 def parseCommandLine():
     parser = ArgumentParser(description=DESC, formatter_class=RawTextHelpFormatter)
+    parser.add_argument("-l", "--list-shortcut-paths", dest="ListShortcutPaths", action='store_true', help="Displays list of stored shortcut paths")
     parser.add_argument("-o", "--output", dest="Output", metavar="FILE", default=None)
     parser.add_argument("--escape-special-symbols", dest="EscapeSpecialSymbols", action='store_true')
 
@@ -103,10 +100,10 @@ class Display(object):
         self.SearchOffset = 0
         self.PrevSelectedMissingPath = ""
         self.DefaultSelectedItemIndex = 0
+        self.PathsFilename = expanduser(self.Config["stored_paths"])
 
-        home = helper.getUserHomeDir()
-        cwd = helper.replaceHomeWithTilde(self.GetCwd(), home)
-        oldpwd = helper.replaceHomeWithTilde(os.environ.get("OLDPWD", cwd), home)
+        cwd = helper.replaceHomeWithTilde(self.GetCwd())
+        oldpwd = helper.replaceHomeWithTilde(os.environ.get("OLDPWD", cwd))
 
         with open(expanduser(self.Config["paths_history"])) as file:
             for line in file.readlines():
@@ -159,8 +156,7 @@ class Display(object):
     def GetSelectedPath(self):
         if not self.SelectedPath:
             return ""
-        home = helper.getUserHomeDir()
-        return helper.replaceHomeWithTilde(self.SelectedPath, home)
+        return helper.replaceHomeWithTilde(self.SelectedPath)
 
     def IsShortcut(self, input):
         return filter(lambda x: input in x, self.Shortcuts.values()) != []
@@ -203,6 +199,17 @@ class Display(object):
             if self.SearchOffset < 0:
                 self.SearchOffset = 0
 
+        if input in self.Shortcuts["cd_to_path"]:
+            path = self.GetStoredPath(self.Shortcuts["cd_to_path"].index(input))
+            if path:
+                self.SelectedPath = path
+                raise urwid.ExitMainLoop()
+            return
+
+        if input in self.Shortcuts["store_path"]:
+            self.StoreSelectedPath(self.Shortcuts["store_path"].index(input))
+            return
+
         # Clean up header
         self.InfoText.set_text("")
 
@@ -213,6 +220,7 @@ class Display(object):
             if not self.PathFilter.get_edit_text():
                 self.SearchOffset = 0
 
+        # Don't re-render listbox extra time
         if input not in ["up", "down", "left", "right"]:
             self.UpdateLixtBox()
 
@@ -250,12 +258,54 @@ class Display(object):
         if newItems:
             self.ListBox.set_focus(0)
 
+    def GetStoredPath(self, pathIndex):
+        if not os.path.exists(self.PathsFilename):
+            return ""
+        with open(self.PathsFilename) as file:
+            data = file.read()
+        for num, line in enumerate(data.split("\n")):
+            if num == pathIndex:
+                return helper.getNearestExistingDir(expanduser(line))
+        return ""
+
+    def StoreSelectedPath(self, pathIndex):
+        selectedItem = self.ListBox.get_focus()[0]
+        if selectedItem:
+            selectedPath = expanduser(selectedItem.GetPath())
+            storedPaths = []
+            # Load stored paths
+            if os.path.exists(self.PathsFilename):
+                with open(self.PathsFilename) as file:
+                    storedPaths = [line.strip() for line in file.readlines()]
+            # Extend list
+            for _ in range(pathIndex + 1 - len(storedPaths)):
+                storedPaths.append("")
+            storedPaths[pathIndex] = selectedPath
+            # Save
+            with open(self.PathsFilename, "w") as file:
+                for path in storedPaths:
+                    file.write(path + "\n")
+
 
 def main(args):
     config = helper.loadConfig("jumper")
+
+    if args.ListShortcutPaths:
+        storeFilename = expanduser(config["stored_paths"])
+        if os.path.exists(storeFilename):
+            with open(storeFilename) as file:
+                paths = [line.strip() for line in file.readlines()]
+            while len(paths) < len(config["shortcuts"]["cd_to_path"]):
+                paths.append("")
+            print("Shortcuts:")
+            for shortcut, path in zip(config["shortcuts"]["cd_to_path"], paths):
+                print("{:>3} - {}".format(shortcut, helper.replaceHomeWithTilde(path)))
+        return
+
+    # Interactive menu
     display = Display(config)
     display.Run()
-
+    
     selectedPath = display.GetSelectedPath()
     if args.EscapeSpecialSymbols:
         symbols = [" ", "(", ")"]

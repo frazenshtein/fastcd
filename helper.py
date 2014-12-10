@@ -2,12 +2,13 @@ import os
 import re
 import json
 
-def getUserHomeDir():
-    return os.path.realpath(os.environ["HOME"])
+HOMEDIR = os.environ["HOME"]
+REALHOMEDIR = os.path.realpath(os.environ["HOME"])
 
-def replaceHomeWithTilde(path, home):
-    if path.startswith(home):
-        path = path.replace(home, "~")
+def replaceHomeWithTilde(path):
+    for candidate in [HOMEDIR, REALHOMEDIR]:
+        if path.startswith(candidate):
+            path = path.replace(candidate, "~")
     return path
 
 def getNearestExistingDir(dir):
