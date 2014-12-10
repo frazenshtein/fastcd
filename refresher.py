@@ -27,7 +27,7 @@ def daemonize(stderr):
     # decouple from parent environment
     os.chdir("/")
     os.setsid()
-    os.umask(0)
+    os.umask(0o077)
 
     # redirect standard file descriptors
     sys.stdout.flush()
@@ -47,9 +47,11 @@ def updatePathList(path, filename, limit):
         # Raise path
         paths.remove(path)
     paths = [path] + paths[:limit]
-    with open(filename, "w") as file:
+    with open(filename + ".tmp", "w") as file:
         for path in paths:
             file.write("%s\n" % path)
+    # Change file atomically
+    os.rename(filename + ".tmp", filename)
 
 def pstuilProcMethod(proc, method):
     val = getattr(proc, method)
@@ -150,7 +152,7 @@ if __name__ == '__main__':
     lockfile = expanduser(config["paths_history"]) + ".lock"
 
     if args.Daemon:
-        daemonize("/tmp/%s_stderr.log" % os.path.basename(sys.argv[0]))
+        daemonize("{}/{}.stderr".format(os.path.abspath(os.path.dirname(__file__)), os.path.basename(sys.argv[0])))
 
     if args.Restart:
         restart(lockfile)

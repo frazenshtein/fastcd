@@ -1,6 +1,5 @@
 import os
 import re
-import sys
 import json
 
 def getUserHomeDir():
@@ -10,6 +9,14 @@ def replaceHomeWithTilde(path, home):
     if path.startswith(home):
         path = path.replace(home, "~")
     return path
+
+def getNearestExistingDir(dir):
+    if os.path.exists(dir):
+        return dir
+    while dir:
+        dir, tail = os.path.split(dir)
+        if os.path.exists(dir):
+            return dir
 
 def convertJson(data):
     if isinstance(data, dict):

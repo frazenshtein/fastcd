@@ -178,10 +178,7 @@ class Display(object):
                 path = expanduser(selectedItem.GetPath())
                 # Double Enter should return nearest path
                 if path == self.PrevSelectedMissingPath:
-                    while path:
-                        path, tail = os.path.split(path)
-                        if os.path.exists(path):
-                            break
+                    path = helper.getNearestExistingDir(path)
                 elif os.path.islink(path):
                     path = os.readlink(path)
                     if not os.path.exists(path):
