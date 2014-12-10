@@ -1,7 +1,8 @@
 {
     "common": {
-        "version": "0.1.62",
-        "paths_history": "~/.fastcd"
+        "version": "0.1.63",
+        "paths_history": "~/.local/share/fastcd/fastcd_history.txt",
+        "stored_paths": "~/.local/share/fastcd/fastcd_paths.txt"
     },
 
     "jumper": {
@@ -24,12 +25,32 @@
             ],
             "dec_search_offset": [
                 "shift tab"
+            ],
+            "cd_to_path": [
+                "f2",
+                "f3",
+                "f4",
+                "f5",
+                "f6",
+                "f7",
+                "f8"
+            ],
+            "store_path": [
+                "shift f2",
+                "shift f3",
+                "shift f4",
+                "shift f5",
+                "shift f6",
+                "shift f7",
+                "shift f8"
             ]
         },
 
         "palette": {
-            /* "text color / background color"
-               default - terminal's default color for text or bg */
+            /*
+            "name": "text color / background color"
+            default - terminal's default color for text or bg
+            */
             "bg": "default/default",
             "text": "light gray/default",
             "selected": "black/dark cyan",
