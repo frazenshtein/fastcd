@@ -92,6 +92,10 @@ Just type the following to install required python modules:
 
     pip install --user urwid psutil
 
+If you have issues with installation psutil, try to install python-dev first:
+
+    sudo apt-get install python-dev
+
 Get the utility:
 
     git clone https://github.com/frazenshtein/fastcd
