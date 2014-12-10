@@ -1,6 +1,6 @@
 {
     "common": {
-        "version": "0.1.65",
+        "version": "0.1.66",
         "paths_history": "~/.local/share/fastcd/fastcd_history.txt",
         "stored_paths": "~/.local/share/fastcd/fastcd_paths.txt"
     },
@@ -72,6 +72,7 @@
             "konsole",
             "sshd",
             "tmux",
+            "screen",
             "terminator",
             "gnome-terminal",
             "xfce4-terminal"
