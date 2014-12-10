@@ -15,11 +15,13 @@ def parseCommandLine():
     parser = ArgumentParser()
     parser.add_argument("--daemon", dest="Daemon", action="store_true")
     parser.add_argument("--restart", dest="Restart", action="store_true")
+    parser.add_argument("--log", dest="LogPath", default="/dev/null")
 
     args = parser.parse_args()
+    args.LogPath = os.path.abspath(os.path.expanduser(args.LogPath))
     return args
 
-def daemonize(stderr):
+def daemonize(filename):
     pid = os.fork()
     if pid > 0:
         sys.exit(0)
@@ -32,7 +34,7 @@ def daemonize(stderr):
     # redirect standard file descriptors
     sys.stdout.flush()
     sys.stderr.flush()
-    se = file(stderr, "w", 0)
+    se = file(filename, "w", 0)
     os.dup2(se.fileno(), sys.stdout.fileno())
     os.dup2(se.fileno(), sys.stderr.fileno())
 
@@ -152,7 +154,7 @@ if __name__ == '__main__':
     lockfile = expanduser(config["paths_history"]) + ".lock"
 
     if args.Daemon:
-        daemonize("{}/{}.stderr".format(os.path.abspath(os.path.dirname(__file__)), os.path.basename(sys.argv[0])))
+        daemonize(args.LogPath)
 
     if args.Restart:
         restart(lockfile)
