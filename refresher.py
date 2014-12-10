@@ -110,7 +110,7 @@ def prepareEnvironment(config):
         if not os.path.exists(dirname):
             os.makedirs(dirname)
         # Create file
-        with open(path, "w"):
+        with open(path, "a"):
             pass
 
 def main(config):
