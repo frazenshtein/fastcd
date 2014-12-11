@@ -82,9 +82,10 @@ def updatePathList(path, filename, limit):
 
 def pstuilProcMethod(proc, method):
     val = getattr(proc, method)
-    if psutil.__version__.startswith("1"):
-        return val
-    return val()
+    if psutil.__version__.startswith("2"):
+        return val()
+    # for versions 0.X and 1.X
+    return val
 
 def getProcessExe(proc):
     return pstuilProcMethod(proc, "exe")
