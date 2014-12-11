@@ -168,7 +168,7 @@ if __name__ == '__main__':
     args = parseCommandLine()
     config = helper.loadConfig("refresher")
     config["paths_history"] = expanduser(config["paths_history"])
-    lockfile = expanduser(config["paths_history"]) + ".lock"
+    lockfile = os.path.join(os.path.dirname(expanduser(config["paths_history"])), "lock")
 
     prepareEnvironment(config)
 
