@@ -13,7 +13,7 @@ python $REFRESHERTOOL --daemon
 function j {
     PATHFILE="/tmp/`date +%s`.path"
     python $JUMPERTOOL --escape-special-symbols -o $PATHFILE $@
-    if [[ ! $@ == "--help" ]] && [[ ! $@ == "-h" ]] && [[ ! $@ == "--list-shortcut-paths" ]] && [[ ! $@ == "-l" ]]
+    if [[ $? -eq 0 ]] && [[ ! $@ == "--help" ]] && [[ ! $@ == "-h" ]] && [[ ! $@ == "--list-shortcut-paths" ]] && [[ ! $@ == "-l" ]]
     then
         OUTPUTPATH=`cat $PATHFILE`
         rm $PATHFILE
