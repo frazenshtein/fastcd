@@ -4,6 +4,7 @@ import os
 import sys
 import time
 import fcntl
+import logging
 from os.path import expanduser
 from argparse import ArgumentParser
 
@@ -13,18 +14,37 @@ except ImportError:
     print("Cannot import psutil module. Install it first 'pip install --user psutil' and reload bashrc 'source ~/.bashrc'")
     exit(1)
 
-
 import helper
+
+log = None
 
 def parseCommandLine():
     parser = ArgumentParser()
     parser.add_argument("--daemon", dest="Daemon", action="store_true")
     parser.add_argument("--restart", dest="Restart", action="store_true")
     parser.add_argument("--log", dest="LogPath", default="/dev/null")
+    parser.add_argument("--verbose", dest="Verbose", action="store_true")
+    parser.add_argument("--timestamps", dest="TimeStamps", action="store_true")
 
     args = parser.parse_args()
     args.LogPath = os.path.abspath(os.path.expanduser(args.LogPath))
     return args
+
+def setupLogger(verbose, timeStamps=False):
+    global log
+
+    log = logging.getLogger()
+    log.setLevel(logging.DEBUG if verbose else logging.ERROR)
+    if timeStamps:
+        format = "[%(asctime)s] %(message)s"
+    else:
+        format = "%(message)s"
+
+    ch = logging.StreamHandler(sys.stdout)
+    ch.setLevel(logging.DEBUG)
+    ch_format = logging.Formatter(format)
+    ch.setFormatter(ch_format)
+    log.addHandler(ch)
 
 def daemonize(filename):
     pid = os.fork()
@@ -78,14 +98,18 @@ def getProcessCmdline(proc, join=False):
         return " ".join(cmdline)
     return cmdline
 
-def getShells(shellDaemons, shell):
+def getShells(terminalEmulators, shell):
     shells = []
+    log.debug("Obtaining list of shells")
     for proc in psutil.process_iter():
         try:
-            if getProcessName(proc) in shellDaemons:
+            if getProcessName(proc) in terminalEmulators:
+                log.debug("Terminal emulator: {}".format(proc))
                 for candidate in proc.get_children():
                     try:
+                        log.debug("Possible shell: {}".format(proc))
                         if getProcessExe(candidate).endswith(shell):
+                            log.debug("Shell: {}".format(proc))
                             shells.append(candidate)
                     except (psutil.NoSuchProcess, psutil.AccessDenied): pass
         except (psutil.NoSuchProcess, psutil.AccessDenied): pass
@@ -123,15 +147,19 @@ def main(config):
     shells = getShells(config["terminal_emulators"], config["shell"])
     lastCwds = getCwds(shells)
 
-    if not os.path.exists(config["paths_history"]):
-        for path in lastCwds.values():
-            _updatePathList(path)
+    log.debug("Updating paths of currently launched shells")
+    for path in lastCwds.values():
+        log.debug("Shell's current path: %s" % path)
+        _updatePathList(path)
 
     while True:
+        log.debug("Obtaining shell's paths")
         for proc in shells:
             try:
                 procCwd = getCleanPath(proc.getcwd())
+                log.debug("Shell {} current path: {}".format(proc.pid, procCwd))
                 if procCwd != lastCwds[proc.pid]:
+                    log.debug("Shell {} changed path. Was: {}".format(proc.pid, lastCwds[proc.pid]))
                     lastCwds[proc.pid] = procCwd
                     _updatePathList(procCwd)
             except psutil.NoSuchProcess: pass
@@ -139,18 +167,16 @@ def main(config):
         time.sleep(timeout)
         shellTimeout += timeout
         if shellTimeout >= config["search_for_new_shells_delay"]:
+            log.debug("Searing for new shells")
             shellTimeout = 0.0
             shells = getShells(config["terminal_emulators"], config["shell"])
             newCwds = getCwds(shells)
             # Get paths of new shells
             paths = set(newCwds.values()).difference(lastCwds.values())
             for path in paths:
+                log.debug("Found new shell with cwd: %s" % path)
                 _updatePathList(path)
             lastCwds = newCwds
-
-def perror(line):
-    print(line)
-    exit(1)
 
 def restart(lockfile):
     if os.path.exists(lockfile):
@@ -166,6 +192,8 @@ def restart(lockfile):
 
 if __name__ == '__main__':
     args = parseCommandLine()
+    setupLogger(args.Verbose, args.TimeStamps)
+
     config = helper.loadConfig("refresher")
     config["paths_history"] = expanduser(config["paths_history"])
     lockfile = os.path.join(os.path.dirname(expanduser(config["paths_history"])), "lock")
@@ -182,7 +210,8 @@ if __name__ == '__main__':
         try:
             fcntl.lockf(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except IOError:
-            perror("Another instance of %s is launched" % sys.argv[0])
+            log.error("Another instance of %s is launched" % sys.argv[0])
+            exit(1)
         lock.truncate()
         lock.write(str(os.getpid()))
         lock.flush()
