@@ -14,7 +14,7 @@ Start typing to filter directories.
 
     Press 'Esc', 'F10' or 'Meta'+'q' to exit.
     Press 'Enter' to change directory.
-    Press 'Meta'+'Enter' to copy selected path to clipboard (pygtk support required)
+    Press 'Meta'+'Enter' to copy selected path to clipboard (pygtk support required).
     Press 'Meta'+'s' to turn on/off case sensitive search.
     Press 'Tab'/'Shift'+'Tab' to move search forward/backward.
     Press 'Shift'+'F2'-'F8' to set selected path as shortcut.
@@ -34,6 +34,8 @@ Missing or non-existent directories will be displayed dimmed and marked with '*'
 However, if you press Enter twice, you will cd to the nearest existing directory.
 
 If you want to redefine shortcuts (config.json), but don't know their key codes - use key_picker.py.
+
+You can change palette in config.json.
 
 Your current path in shell will be first in list,
 while the previous path (OLDPWD) will be the second.
