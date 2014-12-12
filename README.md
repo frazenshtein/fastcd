@@ -12,13 +12,13 @@ Just type "j" in the terminal, press Enter and start typing the name of the desi
 You can use arrows and Page Up/Down to navigate the list.
 Start typing to filter directories.
 
-Press 'Esc', 'F10' or 'Meta'+'q' to exit.
-Press 'Enter' to change directory.
-Press 'Meta'+'Enter' to copy selected path to clipboard (pygtk support required)
-Press 'Meta'+'s' to turn on/off case sensitive search.
-Press 'Tab'/'Shift'+'Tab' to move search forward/backward.
-Press 'Shift'+'F2'-'F8' to set selected path as shortcut.
-Press 'F2'-'F8' to navigate to the directory where the shortcut points.
+    Press 'Esc', 'F10' or 'Meta'+'q' to exit.
+    Press 'Enter' to change directory.
+    Press 'Meta'+'Enter' to copy selected path to clipboard (pygtk support required)
+    Press 'Meta'+'s' to turn on/off case sensitive search.
+    Press 'Tab'/'Shift'+'Tab' to move search forward/backward.
+    Press 'Shift'+'F2'-'F8' to set selected path as shortcut.
+    Press 'F2'-'F8' to navigate to the directory where the shortcut points.
 
 Supported extra symbols:
 
