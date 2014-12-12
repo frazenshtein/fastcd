@@ -44,6 +44,8 @@ Thus fastcd (j) + enter is equivalent to "cd -".
 
 Type 'j -l' to list shortcuts and directories to which they point.
 
+If you want to change directory immediately when pressing path shortcut ('F2'-'F8') - change "exit_after_path_shortcut_pressed" to 1 in config.json
+
 ### Example
 
 Type "j" and press Enter in the terminal to launch fastcd
