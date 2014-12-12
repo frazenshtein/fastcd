@@ -1,6 +1,6 @@
 {
     "common": {
-        "version": "0.1.79",
+        "version": "0.1.80",
         "paths_history": "~/.local/share/fastcd/history.txt",
         "stored_paths": "~/.local/share/fastcd/shortcuts_paths.txt"
     },
@@ -82,7 +82,8 @@
             "gnome-terminal-server",
             "xfce4-terminal",
             "pantheon-terminal",
-            "mate-terminal"
+            "mate-terminal",
+            "xterm"
         ]
     }
 }
