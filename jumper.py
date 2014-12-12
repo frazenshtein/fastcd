@@ -223,8 +223,9 @@ class Display(object):
                     self.SelectedPath = path
                     raise urwid.ExitMainLoop()
                 else:
-                    path = helper.replaceHomeWithTilde(path)
-                    self.PathFilter.set_edit_text(path + "*")
+                    path = helper.replaceHomeWithTilde(path) + "*"
+                    self.PathFilter.set_edit_text(path)
+                    self.PathFilter.set_edit_pos(len(path))
             else:
                 # Do nothing
                 return
