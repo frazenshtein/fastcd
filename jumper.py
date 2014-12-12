@@ -43,6 +43,14 @@ def parseCommandLine():
     args = parser.parse_args()
     return args
 
+def setPathToClipboard(path):
+    try:
+        import pygtk
+        import gtk
+        clipboard = gtk.clipboard_get()
+        clipboard.set_text(path)
+        clipboard.store()
+    except BaseException: pass
 
 class PathWidget(urwid.WidgetWrap):
 
@@ -188,6 +196,14 @@ class Display(object):
                 self.SelectedPath = path
             raise urwid.ExitMainLoop()
 
+        if input in self.Shortcuts["copy_to_clipboard"]:
+            selectedItem = self.ListBox.get_focus()[0]
+            if selectedItem:
+                setPathToClipboard(selectedItem.GetPath())
+                if self.Config["exit_after_coping_path"]:
+                    raise urwid.ExitMainLoop()
+                return
+
         if input in self.Shortcuts["case_sensitive"]:
             self.CaseSensitive = not self.CaseSensitive
 
@@ -305,7 +321,7 @@ def main(args):
     # Interactive menu
     display = Display(config)
     display.Run()
-    
+
     selectedPath = display.GetSelectedPath()
     if args.EscapeSpecialSymbols:
         symbols = [" ", "(", ")"]

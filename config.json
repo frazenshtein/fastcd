@@ -1,12 +1,13 @@
 {
     "common": {
-        "version": "0.1.72",
+        "version": "0.1.73",
         "paths_history": "~/.local/share/fastcd/history.txt",
         "stored_paths": "~/.local/share/fastcd/shortcuts_paths.txt"
     },
 
     "jumper": {
         "greeting_line": "Fastcd to: ",
+        "exit_after_coping_path": 1,
 
         "shortcuts": {
             "exit": [
@@ -16,6 +17,9 @@
             ],
             "change_dir": [
                 "enter"
+            ],
+            "copy_to_clipboard" : [
+                "meta enter"
             ],
             "case_sensitive": [
                 "meta s"
