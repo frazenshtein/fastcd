@@ -1,6 +1,6 @@
 {
     "common": {
-        "version": "0.1.77",
+        "version": "0.1.78",
         "paths_history": "~/.local/share/fastcd/history.txt",
         "stored_paths": "~/.local/share/fastcd/shortcuts_paths.txt"
     },
@@ -79,6 +79,7 @@
             "screen",
             "terminator",
             "gnome-terminal",
+            "gnome-terminal-server",
             "xfce4-terminal",
             "pantheon-terminal"
         ]
