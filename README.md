@@ -107,7 +107,7 @@ Each user who wants to use fastcd should source the
 set.sh file into their bashrc, i.e from within ~/.bashrc just add
 a line:
 
-    source PATH_TO_FASTCD/set.sh
+    source $HOME/fastcd/set.sh
 
 And reload bashrc in your terminal:
 

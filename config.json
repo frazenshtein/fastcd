@@ -1,6 +1,6 @@
 {
     "common": {
-        "version": "0.1.76",
+        "version": "0.1.77",
         "paths_history": "~/.local/share/fastcd/history.txt",
         "stored_paths": "~/.local/share/fastcd/shortcuts_paths.txt"
     },
@@ -60,7 +60,7 @@
             "selected": "black/dark cyan",
             "match": "dark cyan/default",
             "missing": "dark gray/default",
-            "input": "light gray/default",
+            "input": "default/default",
             "info": "dark red/default"
         }
     },
