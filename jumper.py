@@ -219,9 +219,15 @@ class Display(object):
         if input in self.Shortcuts["cd_to_path"]:
             path = self.GetStoredPath(self.Shortcuts["cd_to_path"].index(input))
             if path:
-                self.SelectedPath = path
-                raise urwid.ExitMainLoop()
-            return
+                if self.Config["exit_after_path_shortcut_pressed"]:
+                    self.SelectedPath = path
+                    raise urwid.ExitMainLoop()
+                else:
+                    path = helper.replaceHomeWithTilde(path)
+                    self.PathFilter.set_edit_text(path + "*")
+            else:
+                # Do nothing
+                return
 
         if input in self.Shortcuts["store_path"]:
             self.StoreSelectedPath(self.Shortcuts["store_path"].index(input))
@@ -282,7 +288,7 @@ class Display(object):
             data = file.read()
         for num, line in enumerate(data.split("\n")):
             if num == pathIndex:
-                return helper.getNearestExistingDir(expanduser(line))
+                return helper.getNearestExistingDir(expanduser(line)) or ""
         return ""
 
     def StoreSelectedPath(self, pathIndex):
