@@ -219,11 +219,13 @@ class Display(object):
         if input in self.Shortcuts["cd_to_path"]:
             path = self.GetStoredPath(self.Shortcuts["cd_to_path"].index(input))
             if path:
-                if self.Config["exit_after_path_shortcut_pressed"]:
+                if self.Config["exit_after_pressing_path_shortcut"]:
                     self.SelectedPath = path
                     raise urwid.ExitMainLoop()
                 else:
-                    path = helper.replaceHomeWithTilde(path) + "*"
+                    path = helper.replaceHomeWithTilde(path)
+                    if self.Config["append_asterisk_after_pressing_path_shortcut"]:
+                        path += "*"
                     self.PathFilter.set_edit_text(path)
                     self.PathFilter.set_edit_pos(len(path))
             else:

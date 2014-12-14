@@ -1,6 +1,6 @@
 {
     "common": {
-        "version": "0.1.83",
+        "version": "0.1.84",
         "paths_history": "~/.local/share/fastcd/history.txt",
         "stored_paths": "~/.local/share/fastcd/shortcuts_paths.txt"
     },
@@ -8,7 +8,8 @@
     "jumper": {
         "greeting_line": "Fastcd to: ",
         "exit_after_coping_path": 1,
-        "exit_after_path_shortcut_pressed": 0,
+        "exit_after_pressing_path_shortcut": 0,
+        "append_asterisk_after_pressing_path_shortcut": 1,
 
         "shortcuts": {
             "exit": [
