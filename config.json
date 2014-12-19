@@ -1,6 +1,6 @@
 {
     "common": {
-        "version": "0.1.84",
+        "version": "0.1.85",
         "paths_history": "~/.local/share/fastcd/history.txt",
         "stored_paths": "~/.local/share/fastcd/shortcuts_paths.txt"
     },

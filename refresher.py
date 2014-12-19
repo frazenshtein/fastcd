@@ -110,6 +110,8 @@ def getShells(terminalEmulators, shell):
                     try:
                         log.debug("Possible shell: {}".format(proc))
                         if getProcessExe(candidate).endswith(shell):
+                            # Check that we have access to get cwd
+                            proc.getcwd()
                             log.debug("Shell: {}".format(proc))
                             shells.append(candidate)
                     except (psutil.NoSuchProcess, psutil.AccessDenied): pass
