@@ -1,91 +1,69 @@
 {
-    "common": {
-        "version": "0.1.85",
-        "paths_history": "~/.local/share/fastcd/history.txt",
-        "stored_paths": "~/.local/share/fastcd/shortcuts_paths.txt"
-    },
+    "version": "0.1.86",
 
-    "jumper": {
-        "greeting_line": "Fastcd to: ",
-        "exit_after_coping_path": 1,
-        "exit_after_pressing_path_shortcut": 0,
-        "append_asterisk_after_pressing_path_shortcut": 1,
+    "paths_history": "~/.local/share/fastcd/history.txt",
+    "stored_paths": "~/.local/share/fastcd/shortcuts_paths.txt",
 
-        "shortcuts": {
-            "exit": [
-                "esc",
-                "f10",
-                "meta q"
-            ],
-            "change_dir": [
-                "enter"
-            ],
-            "copy_to_clipboard" : [
-                "meta enter"
-            ],
-            "case_sensitive": [
-                "meta s"
-            ],
-            "inc_search_offset": [
-                "tab"
-            ],
-            "dec_search_offset": [
-                "shift tab"
-            ],
-            "cd_to_path": [
-                "f2",
-                "f3",
-                "f4",
-                "f5",
-                "f6",
-                "f7",
-                "f8"
-            ],
-            "store_path": [
-                "shift f2",
-                "shift f3",
-                "shift f4",
-                "shift f5",
-                "shift f6",
-                "shift f7",
-                "shift f8"
-            ]
-        },
+    "greeting_line": "Fastcd to: ",
 
-        "palette": {
-            /*
-            "name": "text color / background color"
-            default - terminal's default color for text or bg
-            */
-            "bg": "default/default",
-            "text": "default/default",
-            "selected": "black/dark cyan",
-            "match": "dark cyan/default",
-            "missing": "dark gray/default",
-            "input": "default/default",
-            "info": "dark red/default"
-        }
-    },
+    "exit_after_coping_path": 1,
+    "exit_after_pressing_path_shortcut": 0,
+    "append_asterisk_after_pressing_path_shortcut": 1,
 
-    "refresher": {
-        "shell": "bash",
+    "paths_history_limit": 3000,
 
-        "search_for_new_shells_delay": 5.0,
-        "path_updater_delay": 0.2,
-        "paths_history_limit": 3000,
-
-        "terminal_emulators": [
-            "konsole",
-            "sshd",
-            "tmux",
-            "screen",
-            "terminator",
-            "gnome-terminal",
-            "gnome-terminal-server",
-            "xfce4-terminal",
-            "pantheon-terminal",
-            "mate-terminal",
-            "xterm"
+    "shortcuts": {
+        "exit": [
+            "esc",
+            "f10",
+            "meta q"
+        ],
+        "change_dir": [
+            "enter"
+        ],
+        "copy_to_clipboard" : [
+            "meta enter"
+        ],
+        "case_sensitive": [
+            "meta s"
+        ],
+        "inc_search_offset": [
+            "tab"
+        ],
+        "dec_search_offset": [
+            "shift tab"
+        ],
+        "cd_to_path": [
+            "f2",
+            "f3",
+            "f4",
+            "f5",
+            "f6",
+            "f7",
+            "f8"
+        ],
+        "store_path": [
+            "shift f2",
+            "shift f3",
+            "shift f4",
+            "shift f5",
+            "shift f6",
+            "shift f7",
+            "shift f8"
         ]
+    },
+
+    "palette": {
+        /*
+        "name": "text color / background color"
+        default - terminal's default color for text or bg
+        */
+        "bg": "default/default",
+        "text": "default/default",
+        "selected": "black/dark cyan",
+        "match": "dark cyan/default",
+        "missing": "dark gray/default",
+        "input": "default/default",
+        "info": "dark red/default"
     }
 }

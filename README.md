@@ -95,11 +95,11 @@ Now you can just press Enter to cd to the last visited directory
 Requires python 2.7 + extra modules.
 Just type the following to install required python modules:
 
-    sudo apt-get install python-urwid python-psutil
+    sudo apt-get install python-urwid
 
 If you do not have privileges try:
 
-    pip install --user urwid psutil
+    pip install --user urwid
 
 Get the utility:
 

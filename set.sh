@@ -1,14 +1,25 @@
 #!/usr/bin/env bash
 
 # Add to ~/.bashrc:
-#   source "$HOME/Soft/fastcd/set.sh"
-# Do not forget to install extra modules: pip install --user urwid psutil
+#   source "$HOME/Projects/arcadia/junk/prettyboy/tools/fastcd/set.sh"
+# Do not forget to install extra modules: pip install --user urwid
 
 FASTCDTOOLS="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 JUMPERTOOL="$FASTCDTOOLS/jumper.py"
-REFRESHERTOOL="$FASTCDTOOLS/refresher.py"
-# Launch refresher to collect visited dirs
-python $REFRESHERTOOL --daemon
+
+# Set hook to collect visited dirs
+fastcd_hook() {
+    (python $JUMPERTOOL --add-path "$(pwd)" 2>>${FASTCDTOOLS}/erros.log 1>&2 &) &>/dev/null
+}
+
+case $PROMPT_COMMAND in
+    *fastcd_hook*)
+        ;;
+    *)
+        PROMPT_COMMAND="${PROMPT_COMMAND:+$(echo "${PROMPT_COMMAND}" | awk '{gsub(/; *$/,"")}1') ; }fastcd_hook"
+        ;;
+esac
+
 # Set (J)umper
 function j {
     PATHFILE="/tmp/`date +%s`.path"

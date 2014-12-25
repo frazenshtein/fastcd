@@ -2,6 +2,9 @@
 
 import os
 import re
+import time
+import json
+import fcntl
 import signal
 from os.path import expanduser
 from argparse import ArgumentParser, RawTextHelpFormatter
@@ -12,8 +15,9 @@ except ImportError:
     print("Cannot import urwid module. Install it first 'pip install --user urwid'")
     exit(1)
 
-import helper
 
+HOMEDIR = os.environ["HOME"]
+REALHOMEDIR = os.path.realpath(os.environ["HOME"])
 DESC = '''
 Jumper shows you the last visited directories, with the ability to quickly cd.
 You can use arrows and Page Up/Down to navigate the list.
@@ -38,6 +42,7 @@ Supported extra symbols:
 def parseCommandLine():
     parser = ArgumentParser(description=DESC, formatter_class=RawTextHelpFormatter)
     parser.add_argument("-l", "--list-shortcut-paths", dest="ListShortcutPaths", action='store_true', help="Displays list of stored shortcut paths")
+    parser.add_argument("-a", "--add-path", dest="AddPath", default=None, help="Add path to base")
     parser.add_argument("-o", "--output", dest="Output", metavar="FILE", default=None)
     parser.add_argument("--escape-special-symbols", dest="EscapeSpecialSymbols", action='store_true')
 
@@ -52,6 +57,84 @@ def setPathToClipboard(path):
         clipboard.set_text(path)
         clipboard.store()
     except BaseException: pass
+
+def obtainLockFile(fd):
+    while True:
+        try:
+            fcntl.lockf(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            return
+        except IOError:
+            time.sleep(0.1)
+            continue
+
+def updatePathList(path, filename, limit):
+    if os.path.exists(filename):
+        with open(filename) as file:
+            paths = [l.strip() for l in file.readlines()]
+    else:
+        paths = []
+    # Path already in data
+    if path in paths:
+        # Raise path
+        paths.remove(path)
+    paths = [path] + paths[:limit]
+    with open(filename + ".tmp", "w") as file:
+        for path in paths:
+            file.write("%s\n" % path)
+    # Change file atomically
+    os.rename(filename + ".tmp", filename)
+
+def replaceHomeWithTilde(path):
+    for candidate in [HOMEDIR, REALHOMEDIR]:
+        if path.startswith(candidate):
+            path = path.replace(candidate, "~")
+    return path
+
+def getNearestExistingDir(dir):
+    if os.path.exists(dir):
+        return dir
+    while dir:
+        dir, tail = os.path.split(dir)
+        if os.path.exists(dir):
+            return dir
+
+def convertJson(data):
+    if isinstance(data, dict):
+        return {convertJson(key): convertJson(value) for key, value in data.iteritems()}
+    elif isinstance(data, list):
+        return [convertJson(element) for element in data]
+    elif isinstance(data, unicode):
+        string = data.encode("utf-8")
+        # if string.isdigit():
+        #     return int(string)
+        return string
+    else:
+        return data
+
+def loadJson(filename):
+    with open(filename) as file:
+        data = file.read()
+    # Remove comments
+    data = re.sub(r"\/\*.*?\*\/", "", data, flags=re.MULTILINE|re.DOTALL)
+    jsonData = json.loads(data)
+    return convertJson(jsonData)
+
+def loadConfig():
+    modulePath = os.path.dirname(os.path.realpath(__file__))
+    configPath = os.path.join(modulePath, "config.json")
+    return loadJson(configPath)
+
+def prepareEnvironment(config):
+    # Create directories
+    for param in ["paths_history", "stored_paths"]:
+        path = expanduser(config[param])
+        dirname = os.path.dirname(path)
+        if not os.path.exists(dirname):
+            os.makedirs(dirname)
+        # Create file
+        with open(path, "a"):
+            pass
+
 
 class PathWidget(urwid.WidgetWrap):
 
@@ -111,8 +194,8 @@ class Display(object):
         self.DefaultSelectedItemIndex = 0
         self.PathsFilename = expanduser(self.Config["stored_paths"])
 
-        cwd = helper.replaceHomeWithTilde(self.GetCwd())
-        oldpwd = helper.replaceHomeWithTilde(os.environ.get("OLDPWD", cwd))
+        cwd = replaceHomeWithTilde(self.GetCwd())
+        oldpwd = replaceHomeWithTilde(os.environ.get("OLDPWD", cwd))
 
         with open(expanduser(self.Config["paths_history"])) as file:
             for line in file.readlines():
@@ -165,7 +248,7 @@ class Display(object):
     def GetSelectedPath(self):
         if not self.SelectedPath:
             return ""
-        return helper.replaceHomeWithTilde(self.SelectedPath)
+        return replaceHomeWithTilde(self.SelectedPath)
 
     def IsShortcut(self, input):
         return filter(lambda x: input in x, self.Shortcuts.values()) != []
@@ -183,7 +266,7 @@ class Display(object):
                 path = expanduser(selectedItem.GetPath())
                 # Double Enter should return nearest path
                 if path == self.PrevSelectedMissingPath:
-                    path = helper.getNearestExistingDir(path)
+                    path = getNearestExistingDir(path)
                 elif os.path.islink(path):
                     path = os.readlink(path)
                     if not os.path.exists(path):
@@ -223,7 +306,7 @@ class Display(object):
                     self.SelectedPath = path
                     raise urwid.ExitMainLoop()
                 else:
-                    path = helper.replaceHomeWithTilde(path)
+                    path = replaceHomeWithTilde(path)
                     if self.Config["append_asterisk_after_pressing_path_shortcut"]:
                         path += "*"
                     self.PathFilter.set_edit_text(path)
@@ -291,7 +374,7 @@ class Display(object):
             data = file.read()
         for num, line in enumerate(data.split("\n")):
             if num == pathIndex:
-                return helper.getNearestExistingDir(expanduser(line)) or ""
+                return getNearestExistingDir(expanduser(line)) or ""
         return ""
 
     def StoreSelectedPath(self, pathIndex):
@@ -314,7 +397,8 @@ class Display(object):
 
 
 def main(args):
-    config = helper.loadConfig("jumper")
+    config = loadConfig()
+    prepareEnvironment(config)
 
     if args.ListShortcutPaths:
         storeFilename = expanduser(config["stored_paths"])
@@ -325,23 +409,30 @@ def main(args):
                 paths.append("")
             print("Shortcuts:")
             for shortcut, path in zip(config["shortcuts"]["cd_to_path"], paths):
-                print("{:>3} - {}".format(shortcut, helper.replaceHomeWithTilde(path)))
-        return
-
-    # Interactive menu
-    display = Display(config)
-    display.Run()
-
-    selectedPath = display.GetSelectedPath()
-    if args.EscapeSpecialSymbols:
-        symbols = [" ", "(", ")"]
-        for symbol in symbols:
-            selectedPath = selectedPath.replace(symbol, "\\" + symbol)
-    if args.Output:
-        with open(args.Output, "w") as file:
-            file.write(selectedPath)
+                print("{:>3} - {}".format(shortcut, replaceHomeWithTilde(path)))
+    elif args.AddPath:
+        historyFile = expanduser(config["paths_history"])
+        lockFile = os.path.dirname(historyFile) + ".lock"
+        with open(lockFile, "w+") as lock:
+            obtainLockFile(lock)
+            path = replaceHomeWithTilde(args.AddPath.rstrip("/"))
+            updatePathList(path, historyFile, config["paths_history_limit"])
     else:
-        print(selectedPath)
+        # Interactive menu
+        display = Display(config)
+        display.Run()
+
+        selectedPath = display.GetSelectedPath()
+        if args.EscapeSpecialSymbols:
+            symbols = [" ", "(", ")"]
+            for symbol in symbols:
+                selectedPath = selectedPath.replace(symbol, "\\" + symbol)
+        if args.Output:
+            with open(args.Output, "w") as file:
+                file.write(selectedPath)
+        else:
+            print(selectedPath)
+
 
 if __name__ == '__main__':
     args = parseCommandLine()
