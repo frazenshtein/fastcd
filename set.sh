@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Add to ~/.bashrc:
-#   source "$HOME/Projects/arcadia/junk/prettyboy/tools/fastcd/set.sh"
+#   source "$HOME/Soft/fastcd/set.sh"
 # Do not forget to install extra modules: pip install --user urwid
 
 FASTCDTOOLS="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
