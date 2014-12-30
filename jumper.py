@@ -2,10 +2,13 @@
 
 import os
 import re
+import sys
 import time
 import json
+import copy
 import fcntl
 import signal
+import termios
 from os.path import expanduser
 from argparse import ArgumentParser, RawTextHelpFormatter
 
@@ -135,6 +138,25 @@ def prepareEnvironment(config):
         with open(path, "a"):
             pass
 
+def getStdinBuffer():
+    # https://stackoverflow.com/questions/4327942/non-buffering-stdin-reading
+    try:
+        stdin = sys.stdin.fileno()
+        origTtyAttrs = termios.tcgetattr(stdin)
+        ttyAttrs = copy.deepcopy(origTtyAttrs)
+        # Set noncanonical  mode
+        ttyAttrs[3] &= ~termios.ICANON
+        ttyAttrs[3] |= termios.ECHO
+        ttyAttrs[6][termios.VMIN] = 0
+        ttyAttrs[6][termios.VTIME] = 0
+        try:
+            termios.tcsetattr(stdin, termios.TCSANOW, ttyAttrs)
+            return sys.stdin.read()
+        finally:
+            termios.tcsetattr(stdin, termios.TCSANOW, origTtyAttrs)
+    except BaseException: pass
+    return ""
+
 
 class PathWidget(urwid.WidgetWrap):
 
@@ -235,6 +257,11 @@ class Display(object):
             entry = (name, text, bg, 'standout')
             palette.append(entry)
 
+        # There may be data that user already entered before MainLoop was launched
+        bufferData = getStdinBuffer()
+        if bufferData:
+            self.SetTextToPathFilter(bufferData)
+
         loop = urwid.MainLoop(self.View, palette, unhandled_input=self.InputHandler, handle_mouse=False)
         loop.run()
 
@@ -309,8 +336,7 @@ class Display(object):
                     path = replaceHomeWithTilde(path)
                     if self.Config["append_asterisk_after_pressing_path_shortcut"]:
                         path += "*"
-                    self.PathFilter.set_edit_text(path)
-                    self.PathFilter.set_edit_pos(len(path))
+                    self.SetTextToPathFilter(path)
             else:
                 # Do nothing
                 return
@@ -394,6 +420,10 @@ class Display(object):
             with open(self.PathsFilename, "w") as file:
                 for path in storedPaths:
                     file.write(path + "\n")
+
+    def SetTextToPathFilter(self, path):
+        self.PathFilter.set_edit_text(path)
+        self.PathFilter.set_edit_pos(len(path))
 
 
 def main(args):
