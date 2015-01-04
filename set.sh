@@ -9,7 +9,7 @@ JUMPERTOOL="$FASTCDTOOLS/jumper.py"
 
 # Set hook to collect visited dirs
 fastcd_hook() {
-    (python $JUMPERTOOL --add-path "$(pwd)" 2>>${FASTCDTOOLS}/erros.log 1>&2 &) &>/dev/null
+    (python $JUMPERTOOL --add-path "$(pwd)" 2>>${FASTCDTOOLS}/errors.log 1>&2 &) &>/dev/null
 }
 
 case $PROMPT_COMMAND in

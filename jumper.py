@@ -445,7 +445,11 @@ def main(args):
         lockFile = os.path.dirname(historyFile) + ".lock"
         with open(lockFile, "w+") as lock:
             obtainLockFile(lock)
-            path = replaceHomeWithTilde(args.AddPath.rstrip("/"))
+            path = args.AddPath
+            path = replaceHomeWithTilde(path)
+            path = re.sub(r"/{2,}", r"/", path)
+            if len(path) != 1:
+                path.rstrip("/")
             updatePathList(path, historyFile, config["paths_history_limit"])
     else:
         # Interactive menu
