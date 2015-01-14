@@ -1,5 +1,5 @@
 {
-    "version": "0.1.89",
+    "version": "0.1.90",
 
     "paths_history": "~/.local/share/fastcd/history.txt",
     "stored_paths": "~/.local/share/fastcd/shortcuts_paths.txt",
@@ -32,6 +32,9 @@
         ],
         "dec_search_offset": [
             "shift tab"
+        ],
+        "clean_input": [
+            "ctrl w"
         ],
         "cd_to_path": [
             "f2",

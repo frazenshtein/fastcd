@@ -348,6 +348,9 @@ class Display(object):
         # Clean up header
         self.InfoText.set_text("")
 
+        if input in self.Shortcuts["clean_input"]:
+            self.PathFilter.set_edit_text("")
+
         # Display input if it is not a shortcut
         if not self.IsShortcut(input):
             self.PathFilter.keypress((20,), input)
