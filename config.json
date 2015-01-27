@@ -1,5 +1,5 @@
 {
-    "version": "1.0.91",
+    "version": "1.0.92",
 
     "paths_history": "~/.local/share/fastcd/history.txt",
     "stored_paths": "~/.local/share/fastcd/shortcuts_paths.txt",

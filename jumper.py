@@ -15,7 +15,7 @@ from argparse import ArgumentParser, RawTextHelpFormatter
 try:
     import urwid
 except ImportError:
-    print("Cannot import urwid module. Install it first 'pip install --user urwid'")
+    print("Cannot import urwid module. Install it first 'sudo apt-get install python-urwid' or 'pip install --user urwid'")
     exit(1)
 
 
@@ -28,6 +28,7 @@ Start typing to filter directories.
 
 Press 'Esc', 'F10' or 'Meta'+'q' to exit.
 Press 'Enter' to change directory.
+Press 'Ctrl'+'w' to clean up input.
 Press 'Meta'+'Enter' to copy selected path to clipboard (pygtk support required)
 Press 'Meta'+'s' to turn on/off case sensitive search.
 Press 'Tab'/'Shift'+'Tab' to move search forward/backward.
