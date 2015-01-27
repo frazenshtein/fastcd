@@ -1,5 +1,5 @@
 {
-    "version": "0.1.90",
+    "version": "1.0.91",
 
     "paths_history": "~/.local/share/fastcd/history.txt",
     "stored_paths": "~/.local/share/fastcd/shortcuts_paths.txt",
@@ -8,7 +8,7 @@
 
     "exit_after_coping_path": 1,
     "exit_after_pressing_path_shortcut": 0,
-    "append_asterisk_after_pressing_path_shortcut": 1,
+    "append_asterisk_after_pressing_path_shortcut": 0,
 
     "paths_history_limit": 3000,
 
