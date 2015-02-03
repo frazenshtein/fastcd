@@ -29,24 +29,6 @@ Supported extra symbols:
 
 For more info: "j --help"
 
-### Tips
-
-Missing or non-existent directories will be displayed dimmed and marked with '*'.
-However, if you press Enter twice, you will cd to the nearest existing directory.
-
-If you want to redefine shortcuts (config.json), but don't know their key codes - use key_picker.py.
-
-You can change palette in config.json.
-
-Your current path in shell will be first in list,
-while the previous path (OLDPWD) will be the second.
-Previous path is selected by default.
-Thus fastcd (j) + enter is equivalent to "cd -".
-
-Type 'j -l' to list shortcuts and directories to which they point.
-
-If you want to change directory immediately when pressing path shortcut ('F2'-'F8') - change "exit_after_path_shortcut_pressed" to 1 in config.json
-
 ### Example
 
 Type "j" and press Enter in the terminal to launch fastcd
@@ -90,6 +72,27 @@ If you close and open terminal or open another one and launch fastcd ("j") you w
         /usr/lib
 
 Now you can just press Enter to cd to the last visited directory
+
+### Tips
+
+Missing or non-existent directories will be displayed dimmed and marked with '*'.
+However, if you press Enter twice, you will cd to the nearest existing directory.
+
+If the entered path is not present in the database, but is exists, you will still be able to go into it.
+If if doesn't exist, you will stay in your current directory.
+
+If you want to redefine shortcuts (config.json), but don't know their key codes - use key_picker.py.
+
+You can change palette in config.json.
+
+Your current path in shell will be first in list,
+while the previous path (OLDPWD) will be the second.
+Previous path is selected by default.
+Thus fastcd (j) + enter is equivalent to "cd -".
+
+Type 'j -l' to list shortcuts and directories to which they point.
+
+If you want to change directory immediately when pressing path shortcut ('F2'-'F8') - change "exit_after_path_shortcut_pressed" to 1 in config.json
 
 ### Installation
 

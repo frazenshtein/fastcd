@@ -306,6 +306,12 @@ class Display(object):
                     self.InfoText.set_text("No such directory: '%s'" % path)
                     return
                 self.SelectedPath = path
+            else:
+                # If path not in base, but it exists
+                path = self.PathFilter.get_edit_text()
+                path = expanduser(path)
+                if os.path.exists(path):
+                    self.SelectedPath = path
             raise urwid.ExitMainLoop()
 
         if input in self.Shortcuts["copy_to_clipboard"]:
