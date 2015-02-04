@@ -1,5 +1,5 @@
 {
-    "version": "1.0.93",
+    "version": "1.0.94",
 
     "paths_history": "~/.local/share/fastcd/history.txt",
     "stored_paths": "~/.local/share/fastcd/shortcuts_paths.txt",
@@ -34,7 +34,11 @@
             "shift tab"
         ],
         "clean_input": [
-            "ctrl w"
+            "ctrl w",
+            "ctrl u"
+        ],
+        "paste_selected_subpath": [
+            "ctrl y"
         ],
         "cd_to_path": [
             "f2",

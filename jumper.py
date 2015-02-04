@@ -162,12 +162,9 @@ def getStdinBuffer():
 class PathWidget(urwid.WidgetWrap):
 
     def __init__(self, path="", exists=True):
-        self.Path = None
-        if isinstance(path, str):
-            self.Path = path
-        elif isinstance(path, tuple):
-            self.Path = "".join(path)
-        else:
+        self.Path = path
+
+        if not isinstance(path, (str, tuple)):
             raise TypeError("Path must be str or three-element tuple")
 
         if exists:
@@ -181,16 +178,18 @@ class PathWidget(urwid.WidgetWrap):
                 ('fixed', 2, urwid.Text("*"))
             ]
 
-        if isinstance(path, tuple):
-            before, match, after = path
+        if isinstance(self.Path, tuple):
+            before, match, after = self.Path
             text = urwid.AttrWrap(urwid.Text([before, ('match', match), after]), color, 'selected')
             items.append(text)
         else:
-            items.append(urwid.AttrWrap(urwid.Text(path), color, 'selected'))
+            items.append(urwid.AttrWrap(urwid.Text(self.Path), color, 'selected'))
         super(PathWidget, self).__init__(urwid.Columns(items, focus_column=1))
 
     def GetPath(self):
-        return self.Path
+        if isinstance(self.Path, str):
+            return self.Path
+        return "".join(self.Path)
 
     def selectable(self):
         return True
@@ -291,27 +290,25 @@ class Display(object):
         if input in self.Shortcuts["change_dir"]:
             selectedItem = self.ListBox.get_focus()[0]
             if selectedItem:
-                path = expanduser(selectedItem.GetPath())
-                # Double Enter should return nearest path
-                if path == self.PrevSelectedMissingPath:
-                    path = getNearestExistingDir(path)
-                elif os.path.islink(path):
-                    path = os.readlink(path)
-                    if not os.path.exists(path):
-                        self.PrevSelectedMissingPath = path
-                        self.InfoText.set_text("Link refers to the not existing directory: '%s'" % path)
-                        return
-                elif not os.path.exists(path):
-                    self.PrevSelectedMissingPath = path
-                    self.InfoText.set_text("No such directory: '%s'" % path)
-                    return
-                self.SelectedPath = path
+                path = selectedItem.GetPath()
             else:
-                # If path not in base, but it exists
                 path = self.PathFilter.get_edit_text()
-                path = expanduser(path)
-                if os.path.exists(path):
-                    self.SelectedPath = path
+
+            path = expanduser(path)
+            # Double Enter should return nearest path
+            if path == self.PrevSelectedMissingPath:
+                path = getNearestExistingDir(path)
+            elif os.path.islink(path):
+                path = os.readlink(path)
+                if not os.path.exists(path):
+                    self.PrevSelectedMissingPath = path
+                    self.InfoText.set_text("Link refers to the not existing directory: '%s'" % path)
+                    return
+            elif not os.path.exists(path):
+                self.PrevSelectedMissingPath = path
+                self.InfoText.set_text("No such directory: '%s'" % path)
+                return
+            self.SelectedPath = path
             raise urwid.ExitMainLoop()
 
         if input in self.Shortcuts["copy_to_clipboard"]:
@@ -321,6 +318,17 @@ class Display(object):
                 if self.Config["exit_after_coping_path"]:
                     raise urwid.ExitMainLoop()
                 return
+
+        if input in self.Shortcuts["paste_selected_subpath"]:
+            selectedItem = self.ListBox.get_focus()[0]
+            if selectedItem:
+                # TODO looks like its time for refactoring
+                # See PathWidget for more info
+                if isinstance(selectedItem.Path, tuple):
+                    path = selectedItem.Path[0] + selectedItem.Path[1]
+                else:
+                    path = selectedItem.Path
+                self.SetPathFilterText(path)
 
         if input in self.Shortcuts["case_sensitive"]:
             self.CaseSensitive = not self.CaseSensitive
@@ -343,7 +351,7 @@ class Display(object):
                     path = replaceHomeWithTilde(path)
                     if self.Config["append_asterisk_after_pressing_path_shortcut"]:
                         path += "*"
-                    self.SetTextToPathFilter(path)
+                    self.SetPathFilterText(path)
             else:
                 # Do nothing
                 return
@@ -431,7 +439,7 @@ class Display(object):
                 for path in storedPaths:
                     file.write(path + "\n")
 
-    def SetTextToPathFilter(self, path):
+    def SetPathFilterText(self, path):
         self.PathFilter.set_edit_text(path)
         self.PathFilter.set_edit_pos(len(path))
 
