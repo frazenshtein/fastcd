@@ -22,6 +22,7 @@ except ImportError:
 HOMEDIR = os.environ["HOME"]
 REALHOMEDIR = os.path.realpath(os.environ["HOME"])
 DESC = '''
+# TODO UPDATE
 Jumper shows you the last visited directories, with the ability to quickly cd.
 You can use arrows and Page Up/Down to navigate the list.
 Start typing to filter directories.
@@ -158,10 +159,12 @@ def getStdinBuffer():
     except BaseException: pass
     return ""
 
+def getDirs(path):
+    return [dir for dir in os.listdir(path) if os.path.isdir(os.path.join(path, dir))]
 
 class PathWidget(urwid.WidgetWrap):
 
-    def __init__(self, path="", exists=True):
+    def __init__(self, path="", exists=True, shift=2):
         self.Path = path
 
         if not isinstance(path, (str, tuple)):
@@ -170,12 +173,12 @@ class PathWidget(urwid.WidgetWrap):
         if exists:
             color = 'text'
             items = [
-                ('fixed', 2, urwid.Text(""))
+                ('fixed', shift, urwid.Text(""))
             ]
         else:
             color = 'missing'
             items = [
-                ('fixed', 2, urwid.Text("*"))
+                ('fixed', shift, urwid.Text("*"))
             ]
 
         if isinstance(self.Path, tuple):
@@ -197,6 +200,128 @@ class PathWidget(urwid.WidgetWrap):
     def keypress(self, size, key):
         return key
 
+class AutoCompletionPopup(urwid.WidgetWrap):
+
+    def __init__(self, maxHeight, minWidth):
+        self.MaxHeight = maxHeight
+        self.MinWidth = minWidth
+        self.Shown = False
+        self.Height = 1
+        self.Width = 1
+        self.Prefix = ""
+        self.ListBox = urwid.ListBox(urwid.SimpleListWalker([]))
+        self.Pile = urwid.Pile([urwid.LineBox(urwid.BoxAdapter(self.ListBox, self.Height))])
+
+        fill = urwid.Filler(self.Pile)
+        self.__super.__init__(urwid.AttrWrap(fill, 'match'))
+
+    def Update(self, paths, prefix):
+        self.Prefix = prefix
+        self.Width = self.MinWidth
+        items = []
+        for path in paths:
+            self.Width = max(self.Width, len(path))
+            prevLen = len(prefix)
+            pathTuple = ("", path[:prevLen], path[prevLen:])
+            widget = PathWidget(pathTuple, shift=0)
+            items.append(widget)
+
+        listWalker = urwid.SimpleListWalker(items)
+        self.ListBox.body[:] = listWalker
+        if items:
+            self.ListBox.set_focus(0)
+
+        self.Height = min(len(items), self.MaxHeight)
+        lineBox = urwid.LineBox(urwid.BoxAdapter(self.ListBox, self.Height))
+        self.Pile.contents[0] = (lineBox, ('weight', 1))
+
+    def GetHeight(self):
+        return self.Height
+
+    def GetWidth(self):
+        return self.Width
+
+
+class PathFilterWidget(urwid.PopUpLauncher):
+
+    def __init__(self, caption):
+        self.Caption = caption
+        self.PathCache = {}
+        self.PathEdit = urwid.AttrWrap(urwid.Edit(caption), 'input')
+        # TODO calc in %
+        self.Popup = AutoCompletionPopup(20, 20)
+
+        super(PathFilterWidget, self).__init__(self.PathEdit)
+
+    def ParsePath(self, path):
+        if "/" in path:
+            path, prefix = path.rsplit("/", 1)
+            # In this case / is not separator, it path to the root (/)
+            if not path and prefix:
+                path = "/"
+            absPath = expanduser(path)
+            if os.path.exists(absPath) and os.path.isdir(absPath):
+                if absPath not in self.PathCache:
+                    self.PathCache[absPath] = getDirs(absPath)
+                dirs = self.PathCache[absPath]
+                if prefix:
+                    dirs = filter(lambda x: x.lower().startswith(prefix.lower()), dirs)
+                dirs = sorted(dirs, key=str.lower)
+                return path, dirs, prefix
+        return path, [], ""
+
+    def AutoComplete(self):
+        path = self.GetText()
+        path, dirs, prefix = self.ParsePath(path)
+        # There is only one directory
+        if len(dirs) == 1:
+            self.SetText(os.path.join(path, dirs[0]) + "/")
+            self.ClosePopup()
+        # Show candidates
+        elif dirs:
+            self.Popup.Update(dirs, prefix)
+            self.ShowPopup()
+
+    def ClosePopup(self):
+        self.close_pop_up()
+        self.Popup.Shown = False
+
+    def ShowPopup(self):
+        self.open_pop_up()
+        self.Popup.Shown = True
+
+    def SetText(self, text):
+        self.PathEdit.set_edit_text(text)
+        self.PathEdit.set_edit_pos(len(text))
+
+    def GetText(self):
+        return self.PathEdit.get_edit_text()
+
+    def create_pop_up(self):
+        return self.Popup
+
+    def keypress(self, size, key):
+        self.PathEdit.keypress(size, key)
+        # Update popup's content
+        if self.Popup.Shown:
+            path = self.GetText()
+            path, dirs, prefix = self.ParsePath(path)
+            if dirs:
+                self.Popup.Update(dirs, prefix)
+            else:
+                self.ClosePopup()
+        return key
+
+    def GetPopupLeftPos(self):
+        return len(self.GetText()) + len(self.Caption) - len(self.Popup.Prefix) - 1
+
+    def get_pop_up_parameters(self):
+        return {
+            'left': self.GetPopupLeftPos(),
+            'top':1,
+            'overlay_width': self.Popup.GetWidth() + 2, # 2 is linebox border
+            'overlay_height':self.Popup.GetHeight() + 2,
+        }
 
 class Display(object):
 
@@ -246,7 +371,7 @@ class Display(object):
         if self.Paths:
             self.ListBox.set_focus(self.DefaultSelectedItemIndex)
 
-        self.PathFilter = urwid.AttrWrap(urwid.Edit(self.Config["greeting_line"]), 'input')
+        self.PathFilter = PathFilterWidget(caption=self.Config["greeting_line"])
         self.InfoText = urwid.Text("")
         self.Header = urwid.Pile([self.PathFilter, urwid.Padding(urwid.AttrWrap(self.InfoText, 'info'), left=2)])
         self.View = urwid.AttrWrap(urwid.Frame(self.ListBox, header=self.Header), 'bg')
@@ -260,9 +385,9 @@ class Display(object):
         # There may be data that user already entered before MainLoop was launched
         bufferData = getStdinBuffer()
         if bufferData:
-            self.SetTextToPathFilter(bufferData)
+            self.PathFilter.SetText(bufferData)
 
-        loop = urwid.MainLoop(self.View, palette, unhandled_input=self.InputHandler, handle_mouse=False)
+        loop = urwid.MainLoop(self.View, palette, unhandled_input=self.InputHandler, handle_mouse=False, pop_ups=True)
         loop.run()
 
     def GetCwd(self):
@@ -285,33 +410,33 @@ class Display(object):
             return input
 
         if input in self.Shortcuts["exit"]:
-            raise urwid.ExitMainLoop()
-
-        if input in self.Shortcuts["change_dir"]:
-            selectedItem = self.ListBox.get_focus()[0]
-            if selectedItem:
-                path = selectedItem.GetPath()
+            if self.PathFilter.Popup.Shown:
+                self.PathFilter.ClosePopup()
             else:
-                path = self.PathFilter.get_edit_text()
+                raise urwid.ExitMainLoop()
 
-            path = expanduser(path)
-            # Double Enter should return nearest path
-            if path == self.PrevSelectedMissingPath:
-                path = getNearestExistingDir(path)
-            elif os.path.islink(path):
-                path = os.readlink(path)
-                if not os.path.exists(path):
-                    self.PrevSelectedMissingPath = path
-                    self.InfoText.set_text("Link refers to the not existing directory: '%s'" % path)
-                    return
-            elif not os.path.exists(path):
-                self.PrevSelectedMissingPath = path
-                self.InfoText.set_text("No such directory: '%s'" % path)
+        if input in self.Shortcuts["cd_selected_path"]:
+            if self.PathFilter.Popup.Shown:
+                selectedItem = self.PathFilter.Popup.ListBox.get_focus()[0]
+                dirname = os.path.dirname(self.PathFilter.GetText())
+                path = os.path.join(dirname, selectedItem.GetPath()) + "/"
+
+                self.PathFilter.SetText(path)
+                self.PathFilter.ClosePopup()
+            else:
+                selectedItem = self.ListBox.get_focus()[0]
+                if selectedItem:
+                    path = selectedItem.GetPath()
+                else:
+                    path = self.PathFilter.GetText()
+                self.ChangeDirectory(path)
                 return
-            self.SelectedPath = path
-            raise urwid.ExitMainLoop()
 
-        if input in self.Shortcuts["copy_to_clipboard"]:
+        if input in self.Shortcuts["cd_entered_path"]:
+            self.ChangeDirectory(self.PathFilter.GetText())
+            return
+
+        if input in self.Shortcuts["copy_selected_path_to_clipboard"]:
             selectedItem = self.ListBox.get_focus()[0]
             if selectedItem:
                 setPathToClipboard(selectedItem.GetPath())
@@ -319,7 +444,13 @@ class Display(object):
                     raise urwid.ExitMainLoop()
                 return
 
-        if input in self.Shortcuts["paste_selected_subpath"]:
+        if input in self.Shortcuts["autocomplete_fullpath"]:
+            selectedItem = self.ListBox.get_focus()[0]
+            if selectedItem:
+                self.PathFilter.SetText(selectedItem.GetPath())
+            self.PathFilter.AutoComplete()
+
+        if input in self.Shortcuts["autocomplete"]:
             selectedItem = self.ListBox.get_focus()[0]
             if selectedItem:
                 # TODO looks like its time for refactoring
@@ -328,7 +459,19 @@ class Display(object):
                     path = selectedItem.Path[0] + selectedItem.Path[1]
                 else:
                     path = selectedItem.Path
-                self.SetPathFilterText(path)
+                self.PathFilter.SetText(path)
+            self.PathFilter.AutoComplete()
+
+        if input in self.Shortcuts["remove_word"]:
+            path = self.PathFilter.GetText()
+            path = path.rstrip("/")
+            if "/" in path:
+                path, _ = path.rsplit("/", 1)
+                if path:
+                    path += "/"
+                self.PathFilter.SetText(path)
+            else:
+                self.PathFilter.SetText("")
 
         if input in self.Shortcuts["case_sensitive"]:
             self.CaseSensitive = not self.CaseSensitive
@@ -351,7 +494,7 @@ class Display(object):
                     path = replaceHomeWithTilde(path)
                     if self.Config["append_asterisk_after_pressing_path_shortcut"]:
                         path += "*"
-                    self.SetPathFilterText(path)
+                    self.PathFilter.SetText(path)
             else:
                 # Do nothing
                 return
@@ -364,51 +507,79 @@ class Display(object):
         self.InfoText.set_text("")
 
         if input in self.Shortcuts["clean_input"]:
-            self.PathFilter.set_edit_text("")
+            self.PathFilter.SetText("")
 
         # Display input if it is not a shortcut
         if not self.IsShortcut(input):
             self.PathFilter.keypress((20,), input)
             # Remove offset if there is no output
-            if not self.PathFilter.get_edit_text():
+            if not self.PathFilter.GetText():
                 self.SearchOffset = 0
+
+        # Update popup content
+        if self.PathFilter.Popup.Shown:
+            path = self.PathFilter.GetText()
+            path, dirs, prefix = self.PathFilter.ParsePath(path)
+            if dirs:
+                self.PathFilter.Popup.Update(dirs, prefix)
+            else:
+                self.PathFilter.ClosePopup()
 
         # Don't re-render listbox extra time
         if input not in ["up", "down", "left", "right"]:
             self.UpdateLixtBox()
 
+    def ChangeDirectory(self, path):
+        path = expanduser(path)
+        # Double Enter should return nearest path
+        if path == self.PrevSelectedMissingPath:
+            path = getNearestExistingDir(path)
+        elif os.path.islink(path):
+            path = os.readlink(path)
+            if not os.path.exists(path):
+                self.PrevSelectedMissingPath = path
+                self.InfoText.set_text("Link refers to the not existing directory: '%s'" % path)
+                return
+        elif not os.path.exists(path):
+            self.PrevSelectedMissingPath = path
+            self.InfoText.set_text("No such directory: '%s'" % path)
+            return
+        self.SelectedPath = path
+        raise urwid.ExitMainLoop()
+
     def UpdateLixtBox(self):
-        # Filter list
-        newItems = []
-        inputText = self.PathFilter.get_edit_text()
-        # Support unix filename pattern matching
-        validSpecialSymbols = {
-            r"\?": ".",
-            r"\*": ".*?",
-            r"\$": "$",
-        }
-        inputText = re.escape(inputText)
-        for k, v in validSpecialSymbols.items():
-            inputText = inputText.replace(k, v)
-        reFlags = 0 if self.CaseSensitive else re.IGNORECASE
-        regex = re.compile(inputText, reFlags)
+        inputText = self.PathFilter.GetText()
+        if inputText:
+            # Filter list
+            widgets = []
+            # Support unix filename pattern matching
+            validSpecialSymbols = {
+                r"\?": ".",
+                r"\*": ".*?",
+                r"\$": "$",
+            }
+            inputText = re.escape(inputText)
+            for k, v in validSpecialSymbols.items():
+                inputText = inputText.replace(k, v)
+            reFlags = 0 if self.CaseSensitive else re.IGNORECASE
+            regex = re.compile(inputText, reFlags)
 
-        for path, exists in self.Paths:
-            for counter, match in enumerate(regex.finditer(path)):
-                if counter >= self.SearchOffset:
-                    # before, match, after
-                    path = (path[:match.start(0)], match.group(0), path[match.end(0):])
-                    newItems.append(PathWidget(path, exists=exists))
-                    break
+            for path, exists in self.Paths:
+                for counter, match in enumerate(regex.finditer(path)):
+                    if counter >= self.SearchOffset:
+                        # before, match, after
+                        path = (path[:match.start(0)], match.group(0), path[match.end(0):])
+                        widgets.append(PathWidget(path, exists=exists))
+                        break
 
-        if self.SearchOffset and len(newItems) == 0:
-            self.SearchOffset -= 1
-            return self.UpdateLixtBox()
+            if self.SearchOffset and len(widgets) == 0:
+                self.SearchOffset -= 1
+                return self.UpdateLixtBox()
+        else:
+            widgets = [PathWidget(path, exists=exists) for path, exists in self.Paths]
 
-        listWalker = urwid.SimpleListWalker(newItems)
-
-        self.ListBox.body[:] = listWalker
-        if newItems:
+        self.ListBox.body[:] = urwid.SimpleListWalker(widgets)
+        if widgets:
             self.ListBox.set_focus(0)
 
     def GetStoredPath(self, pathIndex):
@@ -439,10 +610,6 @@ class Display(object):
                 for path in storedPaths:
                     file.write(path + "\n")
 
-    def SetPathFilterText(self, path):
-        self.PathFilter.set_edit_text(path)
-        self.PathFilter.set_edit_pos(len(path))
-
 
 def main(args):
     config = loadConfig()
@@ -466,8 +633,7 @@ def main(args):
             path = args.AddPath
             path = replaceHomeWithTilde(path)
             path = re.sub(r"/{2,}", r"/", path)
-            if len(path) != 1:
-                path.rstrip("/")
+            path = path.rstrip("/") + "/"
             updatePathList(path, historyFile, config["paths_history_limit"])
     else:
         # Interactive menu
