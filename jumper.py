@@ -460,8 +460,10 @@ class Display(object):
                     path = selectedItem.Path
                 # Remove / to prevent popup appearance
                 # when autocompletion called for first time
-                if path != self.PathFilter.GetText():
+                if path.rstrip("/") != self.PathFilter.GetText().rstrip("/"):
                     path = path.rstrip("/")
+                else:
+                    path = addSep(path)
                 self.PathFilter.SetText(path)
             self.PathFilter.AutoComplete()
 
@@ -471,8 +473,10 @@ class Display(object):
                 path = selectedItem.GetPath()
                 # Remove / to prevent popup appearance
                 # when autocompletion called for first time
-                if path != self.PathFilter.GetText():
+                if path.rstrip("/") != self.PathFilter.GetText().rstrip("/"):
                     path = path.rstrip("/")
+                else:
+                    path = addSep(path)
                 self.PathFilter.SetText(path)
             self.PathFilter.AutoComplete()
 
