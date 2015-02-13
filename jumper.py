@@ -341,8 +341,8 @@ class Display(object):
         self.DefaultSelectedItemIndex = 0
         self.PathsFilename = expanduser(self.Config["stored_paths"])
 
-        cwd = replaceHomeWithTilde(self.GetCwd())
-        oldpwd = replaceHomeWithTilde(os.environ.get("OLDPWD", cwd))
+        cwd = replaceHomeWithTilde(self.GetCwd()) + "/"
+        oldpwd = replaceHomeWithTilde(os.environ.get("OLDPWD", cwd)) + "/"
 
         with open(expanduser(self.Config["paths_history"])) as file:
             for line in file.readlines():
@@ -444,12 +444,6 @@ class Display(object):
                     raise urwid.ExitMainLoop()
                 return
 
-        if input in self.Shortcuts["autocomplete_fullpath"]:
-            selectedItem = self.ListBox.get_focus()[0]
-            if selectedItem:
-                self.PathFilter.SetText(selectedItem.GetPath())
-            self.PathFilter.AutoComplete()
-
         if input in self.Shortcuts["autocomplete"]:
             selectedItem = self.ListBox.get_focus()[0]
             if selectedItem:
@@ -459,6 +453,15 @@ class Display(object):
                     path = selectedItem.Path[0] + selectedItem.Path[1]
                 else:
                     path = selectedItem.Path
+                # Remove / to prevent popup appearance
+                self.PathFilter.SetText(path.rstrip("/"))
+            self.PathFilter.AutoComplete()
+
+        if input in self.Shortcuts["autocomplete_fullpath"]:
+            selectedItem = self.ListBox.get_focus()[0]
+            if selectedItem:
+                # Remove / to prevent popup appearance
+                path = selectedItem.GetPath().rstrip("/")
                 self.PathFilter.SetText(path)
             self.PathFilter.AutoComplete()
 
