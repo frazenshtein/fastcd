@@ -1,5 +1,5 @@
 {
-    "version": "1.1.101",
+    "version": "1.1.102",
 
     "paths_history": "~/.local/share/fastcd/history.txt",
     "stored_paths": "~/.local/share/fastcd/shortcuts_paths.txt",
@@ -31,7 +31,7 @@
             "shift tab"
         ],
         "copy_selected_path_to_clipboard" : [
-            "meta enter"
+            "ctrl c"
         ],
         "case_sensitive": [
             "meta s"
