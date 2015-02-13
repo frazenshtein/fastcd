@@ -162,6 +162,9 @@ def getStdinBuffer():
 def getDirs(path):
     return [dir for dir in os.listdir(path) if os.path.isdir(os.path.join(path, dir))]
 
+def addSep(path):
+    return path.rstrip("/") + "/"
+
 class PathWidget(urwid.WidgetWrap):
 
     def __init__(self, path="", exists=True, shift=2):
@@ -341,8 +344,10 @@ class Display(object):
         self.DefaultSelectedItemIndex = 0
         self.PathsFilename = expanduser(self.Config["stored_paths"])
 
-        cwd = replaceHomeWithTilde(self.GetCwd()) + "/"
-        oldpwd = replaceHomeWithTilde(os.environ.get("OLDPWD", cwd)) + "/"
+        cwd = replaceHomeWithTilde(self.GetCwd())
+        cwd = addSep(cwd)
+        oldpwd = replaceHomeWithTilde(os.environ.get("OLDPWD", cwd))
+        oldpwd = addSep(oldpwd)
 
         with open(expanduser(self.Config["paths_history"])) as file:
             for line in file.readlines():
@@ -454,14 +459,20 @@ class Display(object):
                 else:
                     path = selectedItem.Path
                 # Remove / to prevent popup appearance
-                self.PathFilter.SetText(path.rstrip("/"))
+                # when autocompletion called for first time
+                if path != self.PathFilter.GetText():
+                    path = path.rstrip("/")
+                self.PathFilter.SetText(path)
             self.PathFilter.AutoComplete()
 
         if input in self.Shortcuts["autocomplete_fullpath"]:
             selectedItem = self.ListBox.get_focus()[0]
             if selectedItem:
+                path = selectedItem.GetPath()
                 # Remove / to prevent popup appearance
-                path = selectedItem.GetPath().rstrip("/")
+                # when autocompletion called for first time
+                if path != self.PathFilter.GetText():
+                    path = path.rstrip("/")
                 self.PathFilter.SetText(path)
             self.PathFilter.AutoComplete()
 
@@ -636,7 +647,7 @@ def main(args):
             path = args.AddPath
             path = replaceHomeWithTilde(path)
             path = re.sub(r"/{2,}", r"/", path)
-            path = path.rstrip("/") + "/"
+            path = addSep(path)
             updatePathList(path, historyFile, config["paths_history_limit"])
     else:
         # Interactive menu
