@@ -447,7 +447,7 @@ class Display(object):
         if input in self.Shortcuts["autocomplete"]:
             selectedItem = self.ListBox.get_focus()[0]
             if selectedItem:
-                # TODO looks like its time for refactoring
+                # TODO looks like it's time for refactoring
                 # See PathWidget for more info
                 if isinstance(selectedItem.Path, tuple):
                     path = selectedItem.Path[0] + selectedItem.Path[1]
