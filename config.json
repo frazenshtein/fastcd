@@ -1,5 +1,5 @@
 {
-    "version": "1.1.102",
+    "version": "1.1.103",
 
     "paths_history": "~/.local/share/fastcd/history.txt",
     "stored_paths": "~/.local/share/fastcd/shortcuts_paths.txt",
@@ -27,7 +27,7 @@
         "autocomplete": [
             "tab"
         ],
-        "autocomplete_fullpath": [
+        "paste_selected_path": [
             "shift tab"
         ],
         "copy_selected_path_to_clipboard" : [

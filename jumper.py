@@ -260,7 +260,7 @@ class PathFilterWidget(urwid.PopUpLauncher):
         if "/" in path:
             path, prefix = path.rsplit("/", 1)
             # In this case / is not separator, it path to the root (/)
-            if not path and prefix:
+            if not path:
                 path = "/"
             absPath = expanduser(path)
             if os.path.exists(absPath) and os.path.isdir(absPath):
@@ -321,7 +321,7 @@ class PathFilterWidget(urwid.PopUpLauncher):
     def get_pop_up_parameters(self):
         return {
             'left': self.GetPopupLeftPos(),
-            'top':1,
+            'top': 1,
             'overlay_width': self.Popup.GetWidth() + 2, # 2 is linebox border
             'overlay_height':self.Popup.GetHeight() + 2,
         }
@@ -450,35 +450,28 @@ class Display(object):
                 return
 
         if input in self.Shortcuts["autocomplete"]:
+            # TODO ??? hack
+            path = self.PathFilter.GetText()
+            if path == "~":
+                path = addSep(path)
+                self.PathFilter.SetText(path)
+            self.PathFilter.AutoComplete()
+
+        # rename shortcut name
+        if input in self.Shortcuts["paste_selected_path"]:
             selectedItem = self.ListBox.get_focus()[0]
             if selectedItem:
-                # TODO looks like it's time for refactoring
-                # See PathWidget for more info
                 if isinstance(selectedItem.Path, tuple):
                     path = selectedItem.Path[0] + selectedItem.Path[1]
                 else:
                     path = selectedItem.Path
                 # Remove / to prevent popup appearance
                 # when autocompletion called for first time
-                if path.rstrip("/") != self.PathFilter.GetText().rstrip("/"):
-                    path = path.rstrip("/")
+                if path.rstrip("/") == self.PathFilter.GetText().rstrip("/"):
+                    path = selectedItem.GetPath()
                 else:
-                    path = addSep(path)
-                self.PathFilter.SetText(path)
-            self.PathFilter.AutoComplete()
-
-        if input in self.Shortcuts["autocomplete_fullpath"]:
-            selectedItem = self.ListBox.get_focus()[0]
-            if selectedItem:
-                path = selectedItem.GetPath()
-                # Remove / to prevent popup appearance
-                # when autocompletion called for first time
-                if path.rstrip("/") != self.PathFilter.GetText().rstrip("/"):
                     path = path.rstrip("/")
-                else:
-                    path = addSep(path)
                 self.PathFilter.SetText(path)
-            self.PathFilter.AutoComplete()
 
         if input in self.Shortcuts["remove_word"]:
             path = self.PathFilter.GetText()
