@@ -450,8 +450,10 @@ class Display(object):
                 return
 
         if input in self.Shortcuts["autocomplete"]:
-            # TODO ??? hack
             path = self.PathFilter.GetText()
+            # TODO ??? hack
+            if not path.startswith("~") and not path.startswith("/"):
+                path = self.ExtendPathFilterInput() or path
             if path == "~":
                 path = addSep(path)
                 self.PathFilter.SetText(path)
@@ -459,19 +461,7 @@ class Display(object):
 
         # rename shortcut name
         if input in self.Shortcuts["paste_selected_path"]:
-            selectedItem = self.ListBox.get_focus()[0]
-            if selectedItem:
-                if isinstance(selectedItem.Path, tuple):
-                    path = selectedItem.Path[0] + selectedItem.Path[1]
-                else:
-                    path = selectedItem.Path
-                # Remove / to prevent popup appearance
-                # when autocompletion called for first time
-                if path.rstrip("/") == self.PathFilter.GetText().rstrip("/"):
-                    path = selectedItem.GetPath()
-                else:
-                    path = path.rstrip("/")
-                self.PathFilter.SetText(path)
+            self.ExtendPathFilterInput()
 
         if input in self.Shortcuts["remove_word"]:
             path = self.PathFilter.GetText()
@@ -557,6 +547,22 @@ class Display(object):
             return
         self.SelectedPath = path
         raise urwid.ExitMainLoop()
+
+    def ExtendPathFilterInput(self):
+        selectedItem = self.ListBox.get_focus()[0]
+        if selectedItem:
+            if isinstance(selectedItem.Path, tuple):
+                path = selectedItem.Path[0] + selectedItem.Path[1]
+            else:
+                path = selectedItem.Path
+            # Remove / to prevent popup appearance
+            # when autocompletion called for first time
+            if path.rstrip("/") == self.PathFilter.GetText().rstrip("/"):
+                path = selectedItem.GetPath()
+            else:
+                path = path.rstrip("/")
+            self.PathFilter.SetText(path)
+            return path
 
     def UpdateLixtBox(self):
         inputText = self.PathFilter.GetText()
