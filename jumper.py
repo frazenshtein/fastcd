@@ -208,7 +208,7 @@ class AutoCompletionPopup(urwid.WidgetWrap):
     def __init__(self, maxHeight, minWidth):
         self.MaxHeight = maxHeight
         self.MinWidth = minWidth
-        self.Shown = False
+        self.IsShown = False
         self.Height = 1
         self.Width = 1
         self.Prefix = ""
@@ -285,13 +285,16 @@ class PathFilterWidget(urwid.PopUpLauncher):
             self.Popup.Update(dirs, prefix)
             self.ShowPopup()
 
+    def IsPopupShown(self):
+        return self.Popup.IsShown
+
     def ClosePopup(self):
         self.close_pop_up()
-        self.Popup.Shown = False
+        self.Popup.IsShown = False
 
     def ShowPopup(self):
         self.open_pop_up()
-        self.Popup.Shown = True
+        self.Popup.IsShown = True
 
     def SetText(self, text):
         self.PathEdit.set_edit_text(text)
@@ -306,7 +309,7 @@ class PathFilterWidget(urwid.PopUpLauncher):
     def keypress(self, size, key):
         self.PathEdit.keypress(size, key)
         # Update popup's content
-        if self.Popup.Shown:
+        if self.IsPopupShown():
             path = self.GetText()
             path, dirs, prefix = self.ParsePath(path)
             if dirs:
@@ -356,7 +359,7 @@ class Display(object):
                     continue
                 exists = os.path.exists(expanduser(path))
                 self.Paths.append((path, exists))
-        # Cwd always first, prev path in the current shell always second
+        # Cwd always first, prev path in the current shell is always second if available
         self.Paths.insert(0, (cwd, os.path.exists(expanduser(cwd))))
         if cwd != oldpwd:
             self.Paths.insert(1, (oldpwd, os.path.exists(expanduser(oldpwd))))
@@ -391,6 +394,7 @@ class Display(object):
         bufferData = getStdinBuffer()
         if bufferData:
             self.PathFilter.SetText(bufferData)
+            self.UpdateLixtBox()
 
         loop = urwid.MainLoop(self.View, palette, unhandled_input=self.InputHandler, handle_mouse=False, pop_ups=True)
         loop.run()
@@ -415,13 +419,13 @@ class Display(object):
             return input
 
         if input in self.Shortcuts["exit"]:
-            if self.PathFilter.Popup.Shown:
+            if self.PathFilter.IsPopupShown():
                 self.PathFilter.ClosePopup()
             else:
                 raise urwid.ExitMainLoop()
 
         if input in self.Shortcuts["cd_selected_path"]:
-            if self.PathFilter.Popup.Shown:
+            if self.PathFilter.IsPopupShown():
                 selectedItem = self.PathFilter.Popup.ListBox.get_focus()[0]
                 dirname = os.path.dirname(self.PathFilter.GetText())
                 path = os.path.join(dirname, selectedItem.GetPath()) + "/"
@@ -451,9 +455,9 @@ class Display(object):
 
         if input in self.Shortcuts["autocomplete"]:
             path = self.PathFilter.GetText()
-            # TODO ??? hack
             if not path.startswith("~") and not path.startswith("/"):
                 path = self.ExtendPathFilterInput() or path
+            # TODO ??? hack
             if path == "~":
                 path = addSep(path)
                 self.PathFilter.SetText(path)
@@ -518,7 +522,7 @@ class Display(object):
                 self.SearchOffset = 0
 
         # Update popup content
-        if self.PathFilter.Popup.Shown:
+        if self.PathFilter.IsPopupShown():
             path = self.PathFilter.GetText()
             path, dirs, prefix = self.PathFilter.ParsePath(path)
             if dirs:
