@@ -577,7 +577,7 @@ class Display(object):
             validSpecialSymbols = {
                 r"\?": ".",
                 r"\*": ".*?",
-                r"\$": "$",
+                r"\$": "\/?$",
             }
             inputText = re.escape(inputText)
             for k, v in validSpecialSymbols.items():
