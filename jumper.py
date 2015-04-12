@@ -325,8 +325,8 @@ class PathFilterWidget(urwid.PopUpLauncher):
         return {
             'left': self.GetPopupLeftPos(),
             'top': 1,
-            'overlay_width': self.Popup.GetWidth() + 2, # 2 is linebox border
-            'overlay_height':self.Popup.GetHeight() + 2,
+            'overlay_width': self.Popup.GetWidth() + 2,  # 2 is linebox's border
+            'overlay_height': self.Popup.GetHeight() + 2,
         }
 
 class Display(object):
@@ -341,7 +341,7 @@ class Display(object):
         self.ListBox = None
         self.PathFilter = None
         self.View = None
-        self.CaseSensitive = False
+        self.CaseSensitive = bool(self.Config["case_sensitive_search"])
         self.SearchOffset = 0
         self.PrevSelectedMissingPath = ""
         self.DefaultSelectedItemIndex = 0

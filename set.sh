@@ -30,7 +30,7 @@ function j {
         rm $PATHFILE
         if [[ ! -z "$OUTPUTPATH" ]]
         then
-            # Eval is required to interpolate ~
+            # Eval is required to interpret ~
             eval cd $OUTPUTPATH
         fi
     fi
