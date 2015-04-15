@@ -497,7 +497,7 @@ class Display(object):
             widgets = []
 
             # TODO add switch to fuzzy
-            se = search.RegexSearchEngine(inputText, self.CaseSensitive)
+            se = search.FuzzySearchEngine(inputText, self.CaseSensitive)
             for path, exists in self.Paths:
                 for counter, match in enumerate(se.finditer(path)):
                     if counter >= self.SearchOffset:

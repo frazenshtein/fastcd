@@ -168,17 +168,21 @@ class FuzzySearchEngine(SearchEngine):
 
         # create last level and link it
         level = len(pattern) - 1
-        middle_state = State(pattern[-2], level=level)
-        middle_state.left_state = core_states[level + 1]
-
         left_state = State(right=self.ANY_SYMBOL, level=level)
         left_state.right_state = core_states[level + 1]
 
+        middle_state = State(pattern[-2], level=level)
+        middle_state.left_state = core_states[level + 1]
+
         state.left_state = left_state
         state.middle_state = middle_state
+        state.right_state = core_states[level]
         return Automaton(init_state, finite_state, pattern)
 
     def search_automaton(self, string, pos, automaton):
+        # search string is less than the pattern - a definite mismatch
+        if (len(string) - pos) < automaton.depth:
+            return None
         # TODO rewrite this shame
         state = automaton.init_state
         index = pos
@@ -231,9 +235,6 @@ class FuzzySearchEngine(SearchEngine):
         start = matches[0].start()
         end = matches[-1].end()
         return MatchObject(original_string, self.pattern, original_string[start:end], start, end)
-
-    # TODO finditer()
-    # yield
 
     def get_state_name(self, state):
         return "Node_{}_{}{}{}\n{}".format(
@@ -350,5 +351,5 @@ if __name__ == '__main__':
     # f.dump_dot("1.dot")
     # import os
     # os.system("dot 1.dot -Tpng -o 1.png")
-    compare()
 
+    compare()

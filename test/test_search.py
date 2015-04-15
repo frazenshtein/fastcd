@@ -20,10 +20,12 @@ class FuzzyEngineTests(unittest.TestCase):
         self.assertEqual(fuzzy.search(string), reference.search(string))
 
     def test_small_pattern(self):
+        self.compare_search("a", "", False)
         self.compare_search("a", "fast", False)
         self.compare_search("tt", "pretty Fast", False)
 
     def test_simple(self):
+        self.compare_search("fast", "", False)
         self.compare_search("fast", "fast", False)
         self.compare_search("fast", "pretty fast", False)
 
@@ -50,6 +52,7 @@ class FuzzyEngineTests(unittest.TestCase):
         self.assertEqual(match.start(), start)
 
     def test_simple_fuzzy(self):
+        self.compare_fuzzy("fas", "f s", cs=False, expected="f s", start=0)
         self.compare_fuzzy("afst", "pretty fast", cs=False, expected="fast", start=7)
         self.compare_fuzzy("dast", "pretty fast", cs=False, expected="fast", start=7)
         self.compare_fuzzy("Dast", "pretty fast", cs=False, expected="fast", start=7)
