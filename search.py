@@ -349,9 +349,9 @@ def compare():
                     match.group() if match else None))
 
 if __name__ == '__main__':
-    f = FuzzySearchEngine("fa", True, 2)
-    f.dump_dot("1.dot")
-    import os
-    os.system("dot 1.dot -Tpng -o 1.png")
+    # f = FuzzySearchEngine("fa", True, 2)
+    # f.dump_dot("1.dot")
+    # import os
+    # os.system("dot 1.dot -Tpng -o 1.png")
 
     compare()
