@@ -216,6 +216,7 @@ class FuzzySearchEngine(SearchEngine):
             last_automaton = (automaton == self.automatons[-1])
             # support $
             # TODO rewrite
+            match = None
             if last_automaton and self.end_of_line:
                 while pos < len(string):
                     match = self.search_automaton(string, pos, automaton)
