@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# coding: utf-8
 # TODO unify style
 
 import os
@@ -338,7 +339,7 @@ class Display(object):
         return filter(lambda x: input in x, self.Shortcuts.values()) != []
 
     def InputHandler(self, input):
-        if not isinstance(input, str):
+        if not isinstance(input, (str, unicode)):
             return input
 
         if input in self.Shortcuts["exit"]:
@@ -576,6 +577,7 @@ def main(args):
             path = add_sep(path)
             update_path_list(path, historyFile, config["paths_history_limit"])
     else:
+        urwid.set_encoding("UTF-8")
         # Interactive menu
         display = Display(config)
         display.Run()
