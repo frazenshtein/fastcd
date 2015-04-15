@@ -1,13 +1,15 @@
 import re
-# TODO unify style
 # TODO profile search()
+
 
 class SearchEngine(object):
     '''
-    Search engines must support '*' and '$' extra characters
+    Search engines must support '*' and '$' extra characters, where
+     '*' means any number of any character
+     '$' means end of line
     '''
 
-    def __init__(self, pattern, caseSensitive):
+    def __init__(self, pattern, case_sensitive):
         raise NotImplementedError()
 
     def search(self, string, pos):
@@ -34,10 +36,18 @@ class MatchObject(object):
     def __eq__(self, other):
         return (
             self.string == other.string and
-            self.pattern == other.pattern and
             self.match == other.match and
-            self.start == other.start and
-            self.end == other.end)
+            self._start == other._start and
+            self._end == other._end)
+
+    def __repr__(self):
+        return '%s("%s", "%s", "%s", "%d", "%d")' % (
+            self.__class__.__name__,
+            self.string,
+            self.pattern,
+            self.match,
+            self._start,
+            self._end)
 
     def group(self, group=0):
         if group:
@@ -57,17 +67,17 @@ class MatchObject(object):
 
 class RegexSearchEngine(SearchEngine):
 
-    def __init__(self, pattern, caseSensitive=False):
-        specialSymbols = {
+    def __init__(self, pattern, case_sensitive=False):
+        special_symbols = {
             r"\*": ".*?",
-            r"\$": "\/?$",
+            r"\$": r"\/?$",
         }
         pattern = re.escape(pattern)
-        for k, v in specialSymbols.items():
+        for k, v in special_symbols.items():
             pattern = pattern.replace(k, v)
         self.pattern = pattern
-        reFlags = 0 if caseSensitive else re.IGNORECASE
-        self.regex = re.compile(self.pattern, flags=reFlags)
+        flags = 0 if case_sensitive else re.IGNORECASE
+        self.regex = re.compile(self.pattern, flags=flags)
 
     def search(self, string, pos=0):
         match = self.regex.search(string, pos=pos)
@@ -82,75 +92,30 @@ class FuzzySearchEngine(SearchEngine):
     substitution and transposition of two adjacent characters
     '''
 
-    AnySymbol = chr(1)
+    ANY_SYMBOL = chr(1)
 
-    def __init__(self, pattern, caseSensitive=False):
-        self.OriginalPattern = pattern
-        if not caseSensitive:
+    def __init__(self, pattern, case_sensitive=False):
+        self.original_pattern = pattern
+        self.case_sensitive = case_sensitive
+        if not case_sensitive:
             pattern = pattern.lower()
-        self.Pattern = pattern
-        self.CaseSensitive = caseSensitive
+        self.pattern = pattern
 
-        eolPos = pattern.find("$")
-        self.EndOfLine = eolPos != -1
-        if self.EndOfLine:
-            pattern = pattern[:eolPos].rstrip("/")
-        self.Automatons = []
-        # TODO test 'fast***fast'
+        eol_pos = pattern.find("$")
+        self.end_of_line = eol_pos != -1
+        if self.end_of_line:
+            pattern = pattern[:eol_pos].rstrip("/")
+        self.automatons = []
         for substr in pattern.split("*"):
             if substr:
-                # TODO rewrite
-                self.Automatons.append(self.BuildFda(substr))
+                self.automatons.append(self.build_fda(substr))
 
-    def BuildFda(self, pattern):
+    def build_fda(self, pattern):
         if len(pattern) < 3:
-            return self.BuildDirectFda(pattern)
-        return self.BuildFuzzyFda(pattern)
+            return self.build_direct_fda(pattern)
+        return self.build_fuzzy_fda(pattern)
 
-    def BuildFuzzyFda(self, pattern):
-        # TODO write moreinfo
-        # create initial and core states
-        initState = State(pattern[0], pattern[1], self.AnySymbol, level=0)
-        coreStates = [initState]
-        for level, symbol in enumerate(pattern[1:], start=1):
-            state = State(symbol, level=level)
-            coreStates.append(state)
-        finiteState = State(level=len(pattern))
-        coreStates.append(finiteState)
-
-        # link initial states
-        initState.rightRef = coreStates[0]
-        for level, state in enumerate(coreStates[1:-1], start=1):
-            state.leftRef = coreStates[level + 1]
-
-        currState = initState
-        for level, symbol in enumerate(pattern[:-2], start=1):
-            # create state for left edge
-            leftState = State(pattern[level], pattern[level + 1], self.AnySymbol, level=level)
-
-            # create state for middle edge and link it with core state
-            midState = State(pattern[level - 1], level=level)
-            midState.leftRef = coreStates[level + 1]
-
-            currState.leftRef = leftState
-            currState.midRef = midState
-            currState.rightRef = coreStates[level]
-            # shift to a deeper level
-            currState = leftState
-
-        # create last level and link it
-        level = len(pattern) - 1
-        midState = State(pattern[-2], level=level)
-        midState.leftRef = coreStates[level + 1]
-
-        leftState = State(right=self.AnySymbol, level=level)
-        leftState.rightRef = coreStates[level + 1]
-
-        currState.leftRef = leftState
-        currState.midRef = midState
-        return Automaton(initState, finiteState, pattern)
-
-    def BuildDirectFda(self, pattern):
+    def build_direct_fda(self, pattern):
         states = []
         for index, symbol in enumerate(pattern):
             state = State(symbol, level=index)
@@ -159,40 +124,86 @@ class FuzzySearchEngine(SearchEngine):
         states.append(State(level=len(pattern)))
         # link states
         for index in range(len(states) - 1):
-            states[index].leftRef = states[index + 1]
+            states[index].left_state = states[index + 1]
         return Automaton(states[0], states[-1], pattern)
+
+    def build_fuzzy_fda(self, pattern):
+        # TODO write moreinfo
+        # create initial and core states
+        init_state = State(pattern[0], pattern[1], self.ANY_SYMBOL, level=0)
+        core_states = [init_state]
+        for level, symbol in enumerate(pattern[1:], start=1):
+            state = State(symbol, level=level)
+            core_states.append(state)
+        finite_state = State(level=len(pattern))
+        core_states.append(finite_state)
+
+        # link initial states
+        init_state.right_state = core_states[0]
+        for level, state in enumerate(core_states[1:-1], start=1):
+            state.left_state = core_states[level + 1]
+
+        state = init_state
+        for level, symbol in enumerate(pattern[:-2], start=1):
+            # create state for left edge
+            left_state = State(pattern[level], pattern[level + 1], self.ANY_SYMBOL, level=level)
+
+            # create state for middle edge and link it with core state
+            middle_State = State(pattern[level - 1], level=level)
+            middle_State.left_state = core_states[level + 1]
+
+            state.left_state = left_state
+            state.middle_state = middle_State
+            state.right_state = core_states[level]
+            # shift to a deeper level
+            state = left_state
+
+        # create last level and link it
+        level = len(pattern) - 1
+        middle_state = State(pattern[-2], level=level)
+        middle_state.left_state = core_states[level + 1]
+
+        left_state = State(right=self.ANY_SYMBOL, level=level)
+        left_state.right_state = core_states[level + 1]
+
+        state.left_state = left_state
+        state.middle_state = middle_state
+        return Automaton(init_state, finite_state, pattern)
 
     def search_automaton(self, string, pos, automaton):
         # TODO rewrite this shame
-        state = automaton.initState
+        state = automaton.init_state
         index = pos
         while True:
             if state.left == string[index]:
-                state = state.leftRef
-            elif state.mid == string[index]:
-                state = state.midRef
+                state = state.left_state
+            elif state.middle == string[index]:
+                state = state.middle_state
             elif state.right:
-                state = state.rightRef
+                state = state.right_state
             else:
                 # TODO check
                 index -= state.level
-                state = automaton.initState
+                state = automaton.init_state
 
-            if state == automaton.finiteState:
+            if state == automaton.finite_state:
                 start = index - state.level + 1
                 end = index - state.level + 1 + len(automaton.pattern)
-                return MatchObject(string, self.Pattern, string[start:end], start, end)
+                return MatchObject(string, self.original_pattern, string[start:end], start, end)
             index += 1
             if index >= len(string):
                 return None
 
     def search(self, string, pos=0):
+        original_string = string
+        if not self.case_sensitive:
+            string = string.lower()
         matches = []
-        for automaton in self.Automatons:
-            lastAutomaton = (automaton == self.Automatons[-1])
+        for automaton in self.automatons:
+            last_automaton = (automaton == self.automatons[-1])
             # support $
             # TODO rewrite
-            if lastAutomaton and self.EndOfLine:
+            if last_automaton and self.end_of_line:
                 while pos < len(string):
                     match = self.search_automaton(string, pos, automaton)
                     if not match:
@@ -211,81 +222,80 @@ class FuzzySearchEngine(SearchEngine):
             pos = match.end()
         start = matches[0].start()
         end = matches[-1].end()
-        return MatchObject(string, self.Pattern, string[start:end], start, end)
+        return MatchObject(original_string, self.pattern, original_string[start:end], start, end)
 
-    def GetStateName(self, state):
+    def get_state_name(self, state):
         return "Node_{}_{}{}{}\n{}".format(
             state.level,
             state.left or "",
-            state.mid or "",
+            state.middle or "",
             "?" if state.right else "",
             id(state))
 
-    def DumpDot(self, filename):
+    def dump_dot(self, filename):
         # to get image:
         # dot FILENAME -Tpng -o automatons.png
         with open(filename, "w") as file:
             file.write("digraph G{\n")
-            file.write('  graph [rankdir=LR label="pattern: {}"];\n'.format(self.Pattern))
-            for index in range(len(self.Automatons)):
-                queue = [self.Automatons[index].initState]
+            file.write('  graph [rankdir=LR label="pattern: {}"];\n'.format(self.pattern))
+            for index in range(len(self.automatons)):
+                queue = [self.automatons[index].init_state]
                 # The graph is acyclic, recursion is not possible
                 while queue:
                     newQueue = set()
                     for state in queue:
-                        nodeName = self.GetStateName(state)
-                        if state.leftRef:
-                            file.write('  "{}"->"{}" [label="{}"];\n'.format(nodeName, self.GetStateName(state.leftRef), state.left))
-                            newQueue.add(state.leftRef)
-                        if state.midRef:
-                            file.write('  "{}"->"{}" [label="{}"];\n'.format(nodeName, self.GetStateName(state.midRef), state.mid))
-                            newQueue.add(state.midRef)
-                        if state.rightRef:
-                            file.write('  "{}"->"{}" [label="?"];\n'.format(nodeName, self.GetStateName(state.rightRef)))
-                            newQueue.add(state.rightRef)
+                        nodeName = self.get_state_name(state)
+                        if state.left_state:
+                            file.write('  "{}"->"{}" [label="{}"];\n'.format(nodeName, self.get_state_name(state.left_state), state.left))
+                            newQueue.add(state.left_state)
+                        if state.middle_state:
+                            file.write('  "{}"->"{}" [label="{}"];\n'.format(nodeName, self.get_state_name(state.middle_state), state.middle))
+                            newQueue.add(state.middle_state)
+                        if state.right_state:
+                            file.write('  "{}"->"{}" [label="?"];\n'.format(nodeName, self.get_state_name(state.right_state)))
+                            newQueue.add(state.right_state)
                     queue = newQueue
                 # Draw a connection between several subpatterns
-                if index < len(self.Automatons) - 1:
-                    initState = self.GetStateName(self.Automatons[index].finiteState)
-                    finiteState = self.GetStateName(self.Automatons[index + 1].initState)
-                    file.write('  "{}"->"{}" [label="*"];\n'.format(initState, finiteState))
+                if index < len(self.automatons) - 1:
+                    init_state = self.get_state_name(self.automatons[index].finite_state)
+                    finite_state = self.get_state_name(self.automatons[index + 1].init_state)
+                    file.write('  "{}"->"{}" [label="*"];\n'.format(init_state, finite_state))
                 else:
-                    if self.EndOfLine:
-                        file.write('  "{}"->"EOL";\n'.format(self.GetStateName(self.Automatons[-1].finiteState)))
+                    if self.end_of_line:
+                        file.write('  "{}"->"EOL";\n'.format(self.get_state_name(self.automatons[-1].finite_state)))
             file.write("}\n")
+
 
 class Automaton(object):
 
-    __slots__ = ['initState', 'finiteState', 'pattern', 'depth']
+    __slots__ = ['init_state', 'finite_state', 'pattern', 'depth']
 
-    def __init__(self, initState, finiteState, pattern):
-        self.initState = initState
-        self.finiteState = finiteState
+    def __init__(self, init_state, finite_state, pattern):
+        self.init_state = init_state
+        self.finite_state = finite_state
         self.pattern = pattern
         self.depth = len(pattern)
 
 
 class State(object):
 
-    __slots__ = ['left', 'leftRef', 'mid', 'midRef', 'right', 'rightRef', 'level']
+    __slots__ = ['left', 'left_state', 'middle', 'middle_state', 'right', 'right_state', 'level']
 
-    def __init__(self, left=None, mid=None, right=None, level=0):
+    def __init__(self, left=None, middle=None, right=None, level=0):
         self.level = level
         self.left = left
-        self.mid = mid
+        self.middle = middle
         self.right = right
-        assert right is FuzzySearchEngine.AnySymbol or right is None, "Right edge is only for AnySymbol"
-        self.leftRef = None
-        self.midRef = None
-        self.rightRef = None
+        assert right is FuzzySearchEngine.ANY_SYMBOL or right is None, "Right edge is only for ANY_SYMBOL"
+        self.left_state = None
+        self.middle_state = None
+        self.right_state = None
 
+# -----------------------------------------------------------------------------
 
 def compare():
     import time
-    # fuzzy = FuzzySearchEngine("fast")
-    # fuzzy.DumpDot("fuzzy.dot")
-
-    testData = [
+    testdata = [
         (
             # match in every line
             ["pretty fast and furious/"] * 1000,
@@ -302,18 +312,13 @@ def compare():
             ["fast*fast", "fast*fast$", "fsat*fats$"],
         ),
         (
-            # $ with /
-            ["pretty fast, fast and fast"] * 1000,
-            ["fast*fast$"],
-        ),
-        (
-            # long match with long pattern
+            # long pattern, long string
             ["fast" * 30 + "!"] * 1000,
             ["fast" * 30 + "!"]
         )
     ]
 
-    for data, patterns in testData:
+    for data, patterns in testdata:
         for pattern in patterns:
             print("\nPattern: " + pattern)
             for engine in (RegexSearchEngine, FuzzySearchEngine):
@@ -322,12 +327,17 @@ def compare():
                 for line in data:
                     match = se.search(line)
                 end = time.time()
-                print("{:20} ({:4}:{:4}) {:0.6f}s  {}".format(engine.__name__, match.start() if match else None, match.end() if match else None, end - start, match.group() if match else None))
-
-# f = FuzzySearchEngine("fat*fu*fast$")
-# f.DumpDot("1.dot")
-# import os
-# os.system("dot 1.dot -Tpng -o 1.png")
+                print("{:20} ({:4}:{:4}) {:0.6f}s {}".format(
+                    engine.__name__,
+                    match.start() if match else None,
+                    match.end() if match else None,
+                    end - start,
+                    match.group() if match else None))
 
 if __name__ == '__main__':
+    # f = FuzzySearchEngine("fat*fu*fast$")
+    # f.dump_dot("1.dot")
+    # import os
+    # os.system("dot 1.dot -Tpng -o 1.png")
     compare()
+

@@ -1,11 +1,12 @@
 {
-    "version": "1.1.108",
+    "version": "1.1.109",
 
     "paths_history": "~/.local/share/fastcd/history.txt",
     "stored_paths": "~/.local/share/fastcd/shortcuts_paths.txt",
 
     "greeting_line": "Fastcd to: ",
 
+    "fuzzy_search": 1,
     "case_sensitive_search": 0,
 
     "exit_after_coping_path": 1,
@@ -34,6 +35,9 @@
         ],
         "copy_selected_path_to_clipboard" : [
             "ctrl c"
+        ],
+        "fuzzy_search": [
+            "meta f"
         ],
         "case_sensitive": [
             "meta s"
