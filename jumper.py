@@ -263,7 +263,8 @@ class Display(object):
         self.ListBox = None
         self.PathFilter = None
         self.View = None
-        self.CaseSensitive = bool(self.Config["case_sensitive_search"])
+        self.CaseSensitive = bool(self.Config["enable_case_sensitive_search"])
+        self.FuzzySearch = bool(self.Config["enable_fuzzy_search"])
         self.SearchOffset = 0
         self.PrevSelectedMissingPath = ""
         self.DefaultSelectedItemIndex = 0
@@ -403,6 +404,9 @@ class Display(object):
         if input in self.Shortcuts["case_sensitive"]:
             self.CaseSensitive = not self.CaseSensitive
 
+        if input in self.Shortcuts["fuzzy_search"]:
+            self.FuzzySearch = not self.FuzzySearch
+
         if input in self.Shortcuts["inc_search_offset"]:
             self.SearchOffset += 1
 
@@ -495,11 +499,13 @@ class Display(object):
         if inputText:
             # Filter list
             widgets = []
+            if self.FuzzySearch:
+                searchEngine = search.FuzzySearchEngine(inputText, self.CaseSensitive)
+            else:
+                searchEngine = search.RegexSearchEngine(inputText, self.CaseSensitive)
 
-            # TODO add switch to fuzzy
-            se = search.FuzzySearchEngine(inputText, self.CaseSensitive)
             for path, exists in self.Paths:
-                for counter, match in enumerate(se.finditer(path)):
+                for counter, match in enumerate(searchEngine.finditer(path)):
                     if counter >= self.SearchOffset:
                         # before, match, after
                         path = (path[:match.start()], match.group(), path[match.end():])
