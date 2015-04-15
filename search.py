@@ -101,10 +101,11 @@ class FuzzySearchEngine(SearchEngine):
 
     ANY_SYMBOL = chr(1)
 
-    def __init__(self, pattern, case_sensitive=False):
+    def __init__(self, pattern, case_sensitive=False, minimal_fuzzy_pattern_len=3):
         super(FuzzySearchEngine, self).__init__(pattern, case_sensitive)
         self.original_pattern = pattern
         self.case_sensitive = case_sensitive
+        self.minimal_fuzzy_pattern_len = max(minimal_fuzzy_pattern_len, 2)
         if not case_sensitive:
             pattern = pattern.lower()
         self.pattern = pattern
@@ -119,7 +120,7 @@ class FuzzySearchEngine(SearchEngine):
                 self.automatons.append(self.build_fda(substr))
 
     def build_fda(self, pattern):
-        if len(pattern) < 3:
+        if len(pattern) < self.minimal_fuzzy_pattern_len:
             return self.build_direct_fda(pattern)
         return self.build_fuzzy_fda(pattern)
 
@@ -311,7 +312,7 @@ def compare():
         (
             # match in every line
             ["pretty fast and furious/"] * 1000,
-            ["fast", "fats", "dast", "ast", "tsaf", "fas*us", "fat*us", "fat*us$"],
+            ["fast", "fats", "ast", "tsaf", "fas*us", "fat*us", "fat*us$"],
         ),
         (
             # no match at all
@@ -347,9 +348,9 @@ def compare():
                     match.group() if match else None))
 
 if __name__ == '__main__':
-    # f = FuzzySearchEngine("fat*fu*fast$")
-    # f.dump_dot("1.dot")
-    # import os
-    # os.system("dot 1.dot -Tpng -o 1.png")
+    f = FuzzySearchEngine("fa", True, 2)
+    f.dump_dot("1.dot")
+    import os
+    os.system("dot 1.dot -Tpng -o 1.png")
 
     compare()

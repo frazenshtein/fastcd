@@ -500,7 +500,7 @@ class Display(object):
             # Filter list
             widgets = []
             if self.FuzzySearch:
-                searchEngine = search.FuzzySearchEngine(inputText, self.CaseSensitive)
+                searchEngine = search.FuzzySearchEngine(inputText, self.CaseSensitive, self.Config["minimal_fuzzy_pattern_len"])
             else:
                 searchEngine = search.RegexSearchEngine(inputText, self.CaseSensitive)
 
