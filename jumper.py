@@ -1,14 +1,9 @@
 #!/usr/bin/env python
+# TODO unify style
 
 import os
 import re
-import sys
-import time
-import json
-import copy
-import fcntl
 import signal
-import termios
 from os.path import expanduser
 from argparse import ArgumentParser, RawTextHelpFormatter
 
@@ -18,9 +13,9 @@ except ImportError:
     print("Cannot import urwid module. Install it first 'sudo apt-get install python-urwid' or 'pip install --user urwid'")
     exit(1)
 
+import util
 
-HOMEDIR = os.environ["HOME"]
-REALHOMEDIR = os.path.realpath(os.environ["HOME"])
+
 DESC = '''
 # TODO UPDATE
 Jumper shows you the last visited directories, with the ability to quickly cd.
@@ -54,25 +49,26 @@ def parseCommandLine():
     args = parser.parse_args()
     return args
 
-def setPathToClipboard(path):
-    try:
-        import pygtk
-        import gtk
-        clipboard = gtk.clipboard_get()
-        clipboard.set_text(path)
-        clipboard.store()
-    except BaseException: pass
+def add_sep(path):
+    return path.rstrip("/") + "/"
 
-def obtainLockFile(fd):
-    while True:
-        try:
-            fcntl.lockf(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-            return
-        except IOError:
-            time.sleep(0.1)
-            continue
+def load_config():
+    modulePath = os.path.dirname(os.path.realpath(__file__))
+    configPath = os.path.join(modulePath, "config.json")
+    return util.load_json(configPath)
 
-def updatePathList(path, filename, limit):
+def prepare_environment(config):
+    # Create directories
+    for param in ["paths_history", "stored_paths"]:
+        path = os.path.expanduser(config[param])
+        dirname = os.path.dirname(path)
+        if not os.path.exists(dirname):
+            os.makedirs(dirname)
+        # Create file
+        with open(path, "a"):
+            pass
+
+def update_path_list(path, filename, limit):
     if os.path.exists(filename):
         with open(filename) as file:
             paths = [l.strip() for l in file.readlines()]
@@ -89,81 +85,6 @@ def updatePathList(path, filename, limit):
     # Change file atomically
     os.rename(filename + ".tmp", filename)
 
-def replaceHomeWithTilde(path):
-    for candidate in [HOMEDIR, REALHOMEDIR]:
-        if path.startswith(candidate):
-            path = path.replace(candidate, "~")
-    return path
-
-def getNearestExistingDir(dir):
-    if os.path.exists(dir):
-        return dir
-    while dir:
-        dir, tail = os.path.split(dir)
-        if os.path.exists(dir):
-            return dir
-
-def convertJson(data):
-    if isinstance(data, dict):
-        return {convertJson(key): convertJson(value) for key, value in data.iteritems()}
-    elif isinstance(data, list):
-        return [convertJson(element) for element in data]
-    elif isinstance(data, unicode):
-        string = data.encode("utf-8")
-        # if string.isdigit():
-        #     return int(string)
-        return string
-    else:
-        return data
-
-def loadJson(filename):
-    with open(filename) as file:
-        data = file.read()
-    # Remove comments
-    data = re.sub(r"\/\*.*?\*\/", "", data, flags=re.MULTILINE|re.DOTALL)
-    jsonData = json.loads(data)
-    return convertJson(jsonData)
-
-def loadConfig():
-    modulePath = os.path.dirname(os.path.realpath(__file__))
-    configPath = os.path.join(modulePath, "config.json")
-    return loadJson(configPath)
-
-def prepareEnvironment(config):
-    # Create directories
-    for param in ["paths_history", "stored_paths"]:
-        path = expanduser(config[param])
-        dirname = os.path.dirname(path)
-        if not os.path.exists(dirname):
-            os.makedirs(dirname)
-        # Create file
-        with open(path, "a"):
-            pass
-
-def getStdinBuffer():
-    # https://stackoverflow.com/questions/4327942/non-buffering-stdin-reading
-    try:
-        stdin = sys.stdin.fileno()
-        origTtyAttrs = termios.tcgetattr(stdin)
-        ttyAttrs = copy.deepcopy(origTtyAttrs)
-        # Set noncanonical  mode
-        ttyAttrs[3] &= ~termios.ICANON
-        ttyAttrs[3] |= termios.ECHO
-        ttyAttrs[6][termios.VMIN] = 0
-        ttyAttrs[6][termios.VTIME] = 0
-        try:
-            termios.tcsetattr(stdin, termios.TCSANOW, ttyAttrs)
-            return sys.stdin.read()
-        finally:
-            termios.tcsetattr(stdin, termios.TCSANOW, origTtyAttrs)
-    except BaseException: pass
-    return ""
-
-def getDirs(path):
-    return [dir for dir in os.listdir(path) if os.path.isdir(os.path.join(path, dir))]
-
-def addSep(path):
-    return path.rstrip("/") + "/"
 
 class PathWidget(urwid.WidgetWrap):
 
@@ -265,7 +186,7 @@ class PathFilterWidget(urwid.PopUpLauncher):
             absPath = expanduser(path)
             if os.path.exists(absPath) and os.path.isdir(absPath):
                 if absPath not in self.PathCache:
-                    self.PathCache[absPath] = getDirs(absPath)
+                    self.PathCache[absPath] = util.get_dirs(absPath)
                 dirs = self.PathCache[absPath]
                 if prefix:
                     dirs = filter(lambda x: x.lower().startswith(prefix.lower()), dirs)
@@ -347,10 +268,10 @@ class Display(object):
         self.DefaultSelectedItemIndex = 0
         self.PathsFilename = expanduser(self.Config["stored_paths"])
 
-        cwd = replaceHomeWithTilde(self.GetCwd())
-        cwd = addSep(cwd)
-        oldpwd = replaceHomeWithTilde(os.environ.get("OLDPWD", cwd))
-        oldpwd = addSep(oldpwd)
+        cwd = util.replace_home_with_tilde(self.GetCwd())
+        cwd = add_sep(cwd)
+        oldpwd = util.replace_home_with_tilde(os.environ.get("OLDPWD", cwd))
+        oldpwd = add_sep(oldpwd)
 
         with open(expanduser(self.Config["paths_history"])) as file:
             for line in file.readlines():
@@ -391,7 +312,7 @@ class Display(object):
             palette.append(entry)
 
         # There may be data that user already entered before MainLoop was launched
-        bufferData = getStdinBuffer()
+        bufferData = util.get_stdin_buffer()
         if bufferData:
             self.PathFilter.SetText(bufferData)
             self.UpdateLixtBox()
@@ -409,7 +330,7 @@ class Display(object):
     def GetSelectedPath(self):
         if not self.SelectedPath:
             return ""
-        return replaceHomeWithTilde(self.SelectedPath)
+        return util.replace_home_with_tilde(self.SelectedPath)
 
     def IsShortcut(self, input):
         return filter(lambda x: input in x, self.Shortcuts.values()) != []
@@ -448,7 +369,7 @@ class Display(object):
         if input in self.Shortcuts["copy_selected_path_to_clipboard"]:
             selectedItem = self.ListBox.get_focus()[0]
             if selectedItem:
-                setPathToClipboard(selectedItem.GetPath())
+                util.copy_to_clipboard(selectedItem.GetPath())
                 if self.Config["exit_after_coping_path"]:
                     raise urwid.ExitMainLoop()
                 return
@@ -459,7 +380,7 @@ class Display(object):
                 path = self.ExtendPathFilterInput() or path
             # TODO ??? hack
             if path == "~":
-                path = addSep(path)
+                path = add_sep(path)
                 self.PathFilter.SetText(path)
             self.PathFilter.AutoComplete()
 
@@ -496,7 +417,7 @@ class Display(object):
                     self.SelectedPath = path
                     raise urwid.ExitMainLoop()
                 else:
-                    path = replaceHomeWithTilde(path)
+                    path = util.replace_home_with_tilde(path)
                     if self.Config["append_asterisk_after_pressing_path_shortcut"]:
                         path += "*"
                     self.PathFilter.SetText(path)
@@ -538,7 +459,7 @@ class Display(object):
         path = expanduser(path)
         # Double Enter should return nearest path
         if path == self.PrevSelectedMissingPath:
-            path = getNearestExistingDir(path)
+            path = util.get_nearest_existing_dir(path)
         elif os.path.islink(path):
             path = os.readlink(path)
             if not os.path.exists(path):
@@ -577,7 +498,7 @@ class Display(object):
             validSpecialSymbols = {
                 r"\?": ".",
                 r"\*": ".*?",
-                r"\$": "\/?$",
+                r"\$": r"\/?$",
             }
             inputText = re.escape(inputText)
             for k, v in validSpecialSymbols.items():
@@ -610,7 +531,7 @@ class Display(object):
             data = file.read()
         for num, line in enumerate(data.split("\n")):
             if num == pathIndex:
-                return getNearestExistingDir(expanduser(line)) or ""
+                return util.get_nearest_existing_dir(expanduser(line)) or ""
         return ""
 
     def StoreSelectedPath(self, pathIndex):
@@ -633,8 +554,8 @@ class Display(object):
 
 
 def main(args):
-    config = loadConfig()
-    prepareEnvironment(config)
+    config = load_config()
+    prepare_environment(config)
 
     if args.ListShortcutPaths:
         storeFilename = expanduser(config["stored_paths"])
@@ -645,17 +566,17 @@ def main(args):
                 paths.append("")
             print("Shortcuts:")
             for shortcut, path in zip(config["shortcuts"]["cd_to_path"], paths):
-                print("{:>3} - {}".format(shortcut, replaceHomeWithTilde(path)))
+                print("{:>3} - {}".format(shortcut, util.replace_home_with_tilde(path)))
     elif args.AddPath:
         historyFile = expanduser(config["paths_history"])
         lockFile = os.path.dirname(historyFile) + ".lock"
         with open(lockFile, "w+") as lock:
-            obtainLockFile(lock)
+            util.obtain_lockfile(lock)
             path = args.AddPath
-            path = replaceHomeWithTilde(path)
+            path = util.replace_home_with_tilde(path)
             path = re.sub(r"/{2,}", r"/", path)
-            path = addSep(path)
-            updatePathList(path, historyFile, config["paths_history_limit"])
+            path = add_sep(path)
+            update_path_list(path, historyFile, config["paths_history_limit"])
     else:
         # Interactive menu
         display = Display(config)
