@@ -10,13 +10,19 @@ class SearchEngine(object):
     '''
 
     def __init__(self, pattern, case_sensitive):
-        raise NotImplementedError()
+        pass
 
     def search(self, string, pos):
         raise NotImplementedError()
 
-    # TODO finditer()
-    # yield
+    def finditer(self, string):
+        pos = 0
+        while True:
+            match = self.search(string, pos)
+            if not match:
+                return
+            pos = match.end()
+            yield match
 
 
 class MatchObject(object):
@@ -68,6 +74,7 @@ class MatchObject(object):
 class RegexSearchEngine(SearchEngine):
 
     def __init__(self, pattern, case_sensitive=False):
+        super(RegexSearchEngine, self).__init__(pattern, case_sensitive)
         special_symbols = {
             r"\*": ".*?",
             r"\$": r"\/?$",
@@ -95,6 +102,7 @@ class FuzzySearchEngine(SearchEngine):
     ANY_SYMBOL = chr(1)
 
     def __init__(self, pattern, case_sensitive=False):
+        super(FuzzySearchEngine, self).__init__(pattern, case_sensitive)
         self.original_pattern = pattern
         self.case_sensitive = case_sensitive
         if not case_sensitive:
@@ -223,6 +231,9 @@ class FuzzySearchEngine(SearchEngine):
         start = matches[0].start()
         end = matches[-1].end()
         return MatchObject(original_string, self.pattern, original_string[start:end], start, end)
+
+    # TODO finditer()
+    # yield
 
     def get_state_name(self, state):
         return "Node_{}_{}{}{}\n{}".format(

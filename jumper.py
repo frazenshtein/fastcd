@@ -14,6 +14,7 @@ except ImportError:
     exit(1)
 
 import util
+import search
 
 
 DESC = '''
@@ -494,23 +495,14 @@ class Display(object):
         if inputText:
             # Filter list
             widgets = []
-            # Support unix filename pattern matching
-            validSpecialSymbols = {
-                r"\?": ".",
-                r"\*": ".*?",
-                r"\$": r"\/?$",
-            }
-            inputText = re.escape(inputText)
-            for k, v in validSpecialSymbols.items():
-                inputText = inputText.replace(k, v)
-            reFlags = 0 if self.CaseSensitive else re.IGNORECASE
-            regex = re.compile(inputText, reFlags)
 
+            # TODO add switch to fuzzy
+            se = search.RegexSearchEngine(inputText, self.CaseSensitive)
             for path, exists in self.Paths:
-                for counter, match in enumerate(regex.finditer(path)):
+                for counter, match in enumerate(se.finditer(path)):
                     if counter >= self.SearchOffset:
                         # before, match, after
-                        path = (path[:match.start(0)], match.group(0), path[match.end(0):])
+                        path = (path[:match.start()], match.group(), path[match.end():])
                         widgets.append(PathWidget(path, exists=exists))
                         break
 
