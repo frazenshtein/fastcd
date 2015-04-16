@@ -59,17 +59,17 @@ class MatchObject(object):
 
     def group(self, group=0):
         if group:
-            raise Exception("Not supported")
+            raise RuntimeError("Not supported")
         return self.match
 
     def start(self, group=0):
         if group:
-            raise Exception("Not supported")
+            raise RuntimeError("Not supported")
         return self._start
 
     def end(self, group=0):
         if group:
-            raise Exception("Not supported")
+            raise RuntimeError("Not supported")
         return self._end
 
 
@@ -97,8 +97,40 @@ class RegexSearchEngine(SearchEngine):
 
 class FuzzySearchEngine(SearchEngine):
     '''
-    Fuzzy search for k=1 (for each substr of pattern) with supported 2 operations:
-    substitution and transposition of two adjacent characters
+    Fuzzy search for k=1 (Damerau–Levenshtein distance) (for each substring of pattern, separated by '*')
+    with supported 2 operations: substitution and transposition of two adjacent characters.
+
+    Finite deterministic automaton (fda) that is obtained by compiling the pattern "fast"
+    where '?' is ANY_SYMBOL
+                                        |
+                                      __v__
+                                     |f|a|?|  - level 0 (initital state)
+                                     |_|_|_|
+                                    _/  |  \_
+                              _____/    |    \____
+                           __/__      __|__     __\__
+                          |a|s|?|    |f| | |   |a| | |  - level 1
+                          |_|_|_|    |_|_|_|   |_|_|_|
+                         _/  | \___   \____     \
+                   _____/    |     \_______\_____\
+                __/__      __|__                __|__
+               |s|t|?|    |a| | |              |s| | |  - level 2
+               |_|_|_|    |_|_|_|              |_|_|_|
+              _/  | \___   \________            \
+        _____/    |     \___________\____________\
+     __/__      __|__                           __|__
+    | | |?|    |s| | |                         |t| | |  - level 3
+    |_|_|_|    |_|_|_|                         |_|_|_|
+         \___   \______                           |
+             \_________\_________________________ |
+                                                _\|__
+                                               | | | |  - level 4 (finite state)
+                                               |_|_|_|    (if the search has entered this state, we found a match)
+
+    To visualize the generated automatons, you can call:
+    >> import search, os
+    >> search.FuzzySearchEngine("p*fast*fur$").dump_dot("fda.dot")
+    >> os.system("dot fda.dot -Tpng -o fda.png")
     '''
 
     ANY_SYMBOL = chr(1)
@@ -351,9 +383,4 @@ def compare():
                     match.group() if match else None))
 
 if __name__ == '__main__':
-    # f = FuzzySearchEngine("fa", True, 2)
-    # f.dump_dot("1.dot")
-    # import os
-    # os.system("dot 1.dot -Tpng -o 1.png")
-
     compare()
