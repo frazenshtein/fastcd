@@ -65,7 +65,10 @@ def prepare_environment(config):
         path = os.path.expanduser(config[param])
         dirname = os.path.dirname(path)
         if not os.path.exists(dirname):
-            os.makedirs(dirname)
+            try:
+                os.makedirs(dirname)
+            except OSError:
+                pass
         # Create file
         with open(path, "a"):
             pass
