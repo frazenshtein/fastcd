@@ -61,12 +61,25 @@ class FuzzyEngineTests(unittest.TestCase):
         self.compare_fuzzy("ast", "pretty fast", cs=False, expected="ast", start=8)
 
     def test_fuzzy_with_asterisks(self):
-         self.compare_fuzzy("fat*us", "fast and furious", cs=False, expected="fast and furious", start=0)
-         self.compare_fuzzy("das*us$", "fast and furious/", cs=False, expected="fast and furious/", start=0)
-         self.compare_fuzzy("fast*fast", "fast fast fast", cs=False, expected="fast fast", start=0)
-         self.compare_fuzzy("fast*fast$", "fast fast fast", cs=False, expected="fast fast fast", start=0)
-         self.compare_fuzzy("fat*fast", "fast fat fast", cs=False, expected="fast fat fast", start=0)
-         self.compare_fuzzy("das***nd***fun", "fast and furious/", cs=False, expected="fast and fur", start=0)
+        self.compare_fuzzy("fat*us", "fast and furious", cs=False, expected="fast and furious", start=0)
+        self.compare_fuzzy("das*us$", "fast and furious/", cs=False, expected="fast and furious/", start=0)
+        self.compare_fuzzy("fast*fast", "fast fast fast", cs=False, expected="fast fast", start=0)
+        self.compare_fuzzy("fast*fast$", "fast fast fast", cs=False, expected="fast fast fast", start=0)
+        self.compare_fuzzy("fat*fast", "fast fat fast", cs=False, expected="fast fat fast", start=0)
+        self.compare_fuzzy("das***nd***fun", "fast and furious/", cs=False, expected="fast and fur", start=0)
+
+    def compare_finditer(self, pattern, string, expected):
+        fuzzy = FuzzySearchEngine(pattern)
+        matched = []
+        for match in fuzzy.finditer(string):
+            matched.append(match)
+        matched = [m.group() for m in matched]
+        self.assertEqual(matched, expected)
+
+    def test_finditer(self):
+        self.compare_finditer("fast", "fast faster fastest", ["fast", "fast", "fast"])
+        self.compare_finditer("fsat", "fast faster fastest", ["fast", "fast", "fast"])
+        self.compare_finditer("fsta", "fast faster fastest", [])
 
 
 if __name__ == '__main__':

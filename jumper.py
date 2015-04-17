@@ -4,7 +4,9 @@
 
 import os
 import re
+import sys
 import signal
+import datetime
 from os.path import expanduser
 from argparse import ArgumentParser, RawTextHelpFormatter
 
@@ -598,5 +600,12 @@ def main(args):
 
 
 if __name__ == '__main__':
-    args = parseCommandLine()
-    main(args)
+    try:
+        args = parseCommandLine()
+        main(args)
+    except Exception as e:
+        msg = "[{}]\n{}\n\n".format(
+            datetime.datetime.now(),
+            str(e))
+        sys.stderr.write(msg)
+        raise
