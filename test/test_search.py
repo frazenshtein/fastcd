@@ -28,6 +28,7 @@ class FuzzyEngineTests(unittest.TestCase):
         self.compare_search("fast", "", False)
         self.compare_search("fast", "fast", False)
         self.compare_search("fast", "pretty fast", False)
+        self.compare_search("aaaabba", "aaaaaabba", False)
 
     def test_case_sensitive(self):
         self.compare_search("Fast", "pretty Fast", True)

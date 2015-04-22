@@ -1,14 +1,13 @@
 # coding: utf-8
 
 import re
-# TODO profile search()
 
 
 class SearchEngine(object):
     '''
-    Search engines must support '*' and '$' extra characters, where
+    Search engine must support '*' and '$' extra characters, where
      '*' means any number of any character
-     '$' means end of line
+     '$' means end of the line
     '''
 
     def __init__(self, pattern, case_sensitive):
@@ -101,7 +100,7 @@ class FuzzySearchEngine(SearchEngine):
     with supported 2 operations: substitution and transposition of two adjacent characters.
 
     Finite deterministic automaton (fda) that is obtained by compiling the pattern "fast"
-    where '?' is ANY_SYMBOL
+    where '?' is ANY_SYMBOL; core states are on the right
                                         |
                                       __v__
                                      |f|a|?|  - level 0 (initital state)
@@ -171,8 +170,7 @@ class FuzzySearchEngine(SearchEngine):
         return Automaton(states[0], states[-1], pattern)
 
     def build_fuzzy_fda(self, pattern):
-        # TODO write moreinfo
-        # create initial and core states
+        # create core states
         init_state = State(pattern[0], pattern[1], self.ANY_SYMBOL, level=0)
         core_states = [init_state]
         for level, symbol in enumerate(pattern[1:], start=1):
@@ -181,12 +179,13 @@ class FuzzySearchEngine(SearchEngine):
         finite_state = State(level=len(pattern))
         core_states.append(finite_state)
 
-        # link initial states
+        # link core states
         init_state.right_state = core_states[0]
         for level, state in enumerate(core_states[1:-1], start=1):
             state.left_state = core_states[level + 1]
 
         state = init_state
+        # last level is already created, penultimate will be created is a special way, that's why pattern[:-2]
         for level, symbol in enumerate(pattern[:-2], start=1):
             # create state for left edge
             left_state = State(pattern[level], pattern[level + 1], self.ANY_SYMBOL, level=level)
@@ -201,13 +200,13 @@ class FuzzySearchEngine(SearchEngine):
             # shift to a deeper level
             state = left_state
 
-        # create last level and link it
+        # penultimate level is created in a special way
         level = len(pattern) - 1
         left_state = State(right=self.ANY_SYMBOL, level=level)
-        left_state.right_state = core_states[level + 1]
+        left_state.right_state = finite_state
 
         middle_state = State(pattern[-2], level=level)
-        middle_state.left_state = core_states[level + 1]
+        middle_state.left_state = finite_state
 
         state.left_state = left_state
         state.middle_state = middle_state
@@ -215,13 +214,13 @@ class FuzzySearchEngine(SearchEngine):
         return Automaton(init_state, finite_state, pattern)
 
     def search_automaton(self, string, pos, automaton):
+        strlen = len(string)
         # search string is less than the pattern - a definite mismatch
-        if (len(string) - pos) < automaton.depth:
+        if (strlen - pos) < automaton.depth:
             return None
-        # TODO rewrite this shame
         state = automaton.init_state
         index = pos
-        while True:
+        while index < strlen:
             if state.left == string[index]:
                 state = state.left_state
             elif state.middle == string[index]:
@@ -229,17 +228,15 @@ class FuzzySearchEngine(SearchEngine):
             elif state.right:
                 state = state.right_state
             else:
-                # TODO check
+                # there is no match - back on the number of done steps to start from the beginning
                 index -= state.level
                 state = automaton.init_state
+            index += 1
 
             if state == automaton.finite_state:
-                start = index - state.level + 1
-                end = index - state.level + 1 + len(automaton.pattern)
+                start = index - len(automaton.pattern)
+                end = index
                 return MatchObject(string, self.original_pattern, string[start:end], start, end)
-            index += 1
-            if index >= len(string):
-                return None
 
     def search(self, string, pos=0):
         original_string = string
@@ -248,16 +245,16 @@ class FuzzySearchEngine(SearchEngine):
         matches = []
         for automaton in self.automatons:
             last_automaton = (automaton == self.automatons[-1])
-            # support $
-            # TODO rewrite
             match = None
+            # support '$' symbol
             if last_automaton and self.end_of_line:
                 while pos < len(string):
                     match = self.search_automaton(string, pos, automaton)
                     if not match:
                         return None
-                    if match.end() == len(string):
+                    elif match.end() == len(string):
                         break
+                    # separator '/' is allowed between the last pattern and symbol '$'
                     elif match.end() == len(string) - 1 and string[-1] == "/":
                         match._end += 1
                         break
@@ -268,6 +265,8 @@ class FuzzySearchEngine(SearchEngine):
                 return None
             matches.append(match)
             pos = match.end()
+        if not matches:
+            return None
         start = matches[0].start()
         end = matches[-1].end()
         return MatchObject(original_string, self.pattern, original_string[start:end], start, end)
@@ -281,14 +280,14 @@ class FuzzySearchEngine(SearchEngine):
             id(state))
 
     def dump_dot(self, filename):
-        # to get image:
+        # to generate image:
         # dot FILENAME -Tpng -o automatons.png
         with open(filename, "w") as file:
             file.write("digraph G{\n")
             file.write('  graph [rankdir=LR label="pattern: {}"];\n'.format(self.pattern))
             for index in range(len(self.automatons)):
                 queue = [self.automatons[index].init_state]
-                # The graph is acyclic, recursion is not possible
+                # the graph is acyclic, recursion is not possible
                 while queue:
                     newQueue = set()
                     for state in queue:
@@ -303,7 +302,7 @@ class FuzzySearchEngine(SearchEngine):
                             file.write('  "{}"->"{}" [label="?"];\n'.format(nodeName, self.get_state_name(state.right_state)))
                             newQueue.add(state.right_state)
                     queue = newQueue
-                # Draw a connection between several subpatterns
+                # draw a connection between several patterns
                 if index < len(self.automatons) - 1:
                     init_state = self.get_state_name(self.automatons[index].finite_state)
                     finite_state = self.get_state_name(self.automatons[index + 1].init_state)
@@ -327,6 +326,12 @@ class Automaton(object):
 
 class State(object):
 
+    '''
+    Left edge is for direct match (most frequent case)
+    Middle edge is for transposition of two adjacent characters
+    Right edge is for substitution/misprint
+    '''
+
     __slots__ = ['left', 'left_state', 'middle', 'middle_state', 'right', 'right_state', 'level']
 
     def __init__(self, left=None, middle=None, right=None, level=0):
@@ -345,7 +350,6 @@ def compare():
     import time
     testdata = [
         (
-            # match in every line
             ["pretty fast and furious/"] * 1000,
             ["fast", "fats", "ast", "tsaf", "fas*us", "fat*us", "fat*us$"],
         ),
@@ -360,9 +364,9 @@ def compare():
             ["fast*fast", "fast*fast$", "fsat*fats$"],
         ),
         (
-            # long pattern, long string
-            ["fast" * 30 + "!"] * 1000,
-            ["fast" * 30 + "!"]
+            # worst case - long string, long pattern, almost match
+            ["a" * 80 + "bba"] * 1000,
+            ["a" * 40 + "bba"]
         )
     ]
 
