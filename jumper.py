@@ -554,7 +554,7 @@ class Display(object):
         if input_path:
             widgets = []
             if self.fuzzy_search:
-                engine = search.FuzzySearchEngine(input_path, self.case_sensitive, self.config["minimal_fuzzy_pattern_len"])
+                engine = search.FuzzySearchEngine(input_path, self.case_sensitive, self.config["minimal_fuzzy_search_len"])
             else:
                 engine = search.RegexSearchEngine(input_path, self.case_sensitive)
             for path, exists in self.stored_paths:
@@ -592,6 +592,10 @@ def main(args):
             for shortcut, path in zip(config["shortcuts"]["cd_to_path"], paths):
                 print("{:>{}} - {}".format(shortcut, smax_len, util.replace_home_with_tilde(path)))
     elif args.add_path:
+        for pattern in config["skip_list"]:
+            if re.search(pattern, args.add_path):
+                return
+
         history_filename = expanduser(config["paths_history"])
         lockfile = os.path.dirname(history_filename) + ".lock"
         with open(lockfile, "w+") as lock:
