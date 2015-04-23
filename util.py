@@ -24,6 +24,7 @@ def copy_to_clipboard(path):
     except BaseException:
         pass
 
+
 def obtain_lockfile(fd):
     while True:
         try:
@@ -33,11 +34,13 @@ def obtain_lockfile(fd):
             time.sleep(0.1)
             continue
 
+
 def replace_home_with_tilde(path):
     for candidate in [HOMEDIR, REALHOMEDIR]:
         if path.startswith(candidate):
             path = path.replace(candidate, "~")
     return path
+
 
 def get_nearest_existing_dir(dir):
     if os.path.exists(dir):
@@ -46,6 +49,7 @@ def get_nearest_existing_dir(dir):
         dir, _ = os.path.split(dir)
         if os.path.exists(dir):
             return dir
+
 
 def convert_json(data):
     if isinstance(data, dict):
@@ -60,6 +64,7 @@ def convert_json(data):
     else:
         return data
 
+
 def load_json(filename):
     with open(filename) as file:
         data = file.read()
@@ -67,6 +72,7 @@ def load_json(filename):
     data = re.sub(r"\/\*.*?\*\/", "", data, flags=re.MULTILINE|re.DOTALL)
     jsonData = json.loads(data)
     return convert_json(jsonData)
+
 
 def get_stdin_buffer():
     # https://stackoverflow.com/questions/4327942/non-buffering-stdin-reading
@@ -87,6 +93,7 @@ def get_stdin_buffer():
     except Exception:
         pass
     return ""
+
 
 def get_dirs(path):
     return [dir for dir in os.listdir(path) if os.path.isdir(os.path.join(path, dir))]

@@ -1,5 +1,5 @@
 {
-    "version": "1.1.122",
+    "version": "1.1.123",
 
     "paths_history": "~/.local/share/fastcd/history.txt",
     "stored_paths": "~/.local/share/fastcd/shortcuts_paths.txt",
@@ -88,5 +88,10 @@
         "missing": "dark gray/default",
         "input": "default/default",
         "info": "dark red/default"
-    }
+    },
+
+    /*list of regex patterns for paths that won't be stored*/
+    "skip_list": [
+        /*TODO add support*/
+    ]
 }
