@@ -21,7 +21,8 @@ def copy_to_clipboard(path):
         clipboard = gtk.clipboard_get()
         clipboard.set_text(path)
         clipboard.store()
-    except BaseException: pass
+    except BaseException:
+        pass
 
 def obtain_lockfile(fd):
     while True:
@@ -62,7 +63,7 @@ def convert_json(data):
 def load_json(filename):
     with open(filename) as file:
         data = file.read()
-    # Remove comments
+    # remove comments
     data = re.sub(r"\/\*.*?\*\/", "", data, flags=re.MULTILINE|re.DOTALL)
     jsonData = json.loads(data)
     return convert_json(jsonData)
@@ -73,7 +74,7 @@ def get_stdin_buffer():
         stdin = sys.stdin.fileno()
         original_tty_attrs = termios.tcgetattr(stdin)
         tty_attrs = copy.deepcopy(original_tty_attrs)
-        # Set noncanonical  mode
+        # set noncanonical  mode
         tty_attrs[3] &= ~termios.ICANON
         tty_attrs[3] |= termios.ECHO
         tty_attrs[6][termios.VMIN] = 0
@@ -83,7 +84,8 @@ def get_stdin_buffer():
             return sys.stdin.read()
         finally:
             termios.tcsetattr(stdin, termios.TCSANOW, original_tty_attrs)
-    except BaseException: pass
+    except Exception:
+        pass
     return ""
 
 def get_dirs(path):

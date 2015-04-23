@@ -95,7 +95,7 @@ class RegexSearchEngine(SearchEngine):
 
 
 class FuzzySearchEngine(SearchEngine):
-    '''
+    r'''
     Fuzzy search for k=1 (Damerau–Levenshtein distance) (for each substring of pattern, separated by '*')
     with supported 2 operations: substitution and transposition of two adjacent characters.
 

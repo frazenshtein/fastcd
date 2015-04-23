@@ -4,9 +4,7 @@
 
 import os
 import re
-import sys
 import signal
-import datetime
 from os.path import expanduser
 from argparse import ArgumentParser, RawTextHelpFormatter
 
@@ -323,7 +321,19 @@ class Display(object):
         bufferData = util.get_stdin_buffer()
         if bufferData:
             self.PathFilter.SetText(bufferData)
-            self.UpdateLixtBox()
+            self.UpdateListBox()
+            # TODO This is temporary fix, it seems to me that cleaning of the list is not really correct
+            # steps to reproduce problem:
+            # - add time.sleep(3) just before get_stdin_buffer()
+            # - launch j
+            # - input nonexistent path
+            # IndexError: No widget at position 0
+            # this is due to cleaning of the ListBox (self.ListBox.body[:] = urwid.SimpleListWalker([])) in UpdateListBox()
+            # however, such cleaning method of the Listbox works correctly if you enter a nonexistent path during normal run of the program
+            if not self.ListBox.body:
+                # replace self.ListBox with a new one with empty listwalker
+                self.ListBox = urwid.ListBox(urwid.SimpleListWalker([]))
+                self.View = urwid.AttrWrap(urwid.Frame(self.ListBox, header=self.Header), 'bg')
 
         loop = urwid.MainLoop(self.View, palette, unhandled_input=self.InputHandler, handle_mouse=False, pop_ups=True)
         loop.run()
@@ -464,7 +474,7 @@ class Display(object):
 
         # Don't re-render listbox extra time
         if input not in ["up", "down", "left", "right"]:
-            self.UpdateLixtBox()
+            self.UpdateListBox()
 
     def ChangeDirectory(self, path):
         path = expanduser(path)
@@ -500,7 +510,7 @@ class Display(object):
             self.PathFilter.SetText(path)
             return path
 
-    def UpdateLixtBox(self):
+    def UpdateListBox(self):
         inputText = self.PathFilter.GetText()
         if inputText:
             # Filter list
@@ -509,7 +519,6 @@ class Display(object):
                 searchEngine = search.FuzzySearchEngine(inputText, self.CaseSensitive, self.Config["minimal_fuzzy_pattern_len"])
             else:
                 searchEngine = search.RegexSearchEngine(inputText, self.CaseSensitive)
-
             for path, exists in self.Paths:
                 for counter, match in enumerate(searchEngine.finditer(path)):
                     if counter >= self.SearchOffset:
@@ -520,7 +529,7 @@ class Display(object):
 
             if self.SearchOffset and len(widgets) == 0:
                 self.SearchOffset -= 1
-                return self.UpdateLixtBox()
+                return self.UpdateListBox()
         else:
             widgets = [PathWidget(path, exists=exists) for path, exists in self.Paths]
 
@@ -600,12 +609,5 @@ def main(args):
 
 
 if __name__ == '__main__':
-    try:
-        args = parseCommandLine()
-        main(args)
-    except Exception as e:
-        msg = "[{}]\n{}\n\n".format(
-            datetime.datetime.now(),
-            str(e))
-        sys.stderr.write(msg)
-        raise
+    args = parseCommandLine()
+    main(args)
