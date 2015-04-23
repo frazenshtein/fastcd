@@ -21,7 +21,7 @@ def copy_to_clipboard(path):
         clipboard = gtk.clipboard_get()
         clipboard.set_text(path)
         clipboard.store()
-    except BaseException:
+    except Exception:
         pass
 
 
