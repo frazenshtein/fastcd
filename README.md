@@ -19,20 +19,20 @@ Jumper shows last visited directories and allows you change cwd quickly.
 You can use arrows and Page Up/Down to navigate the list.
 Start typing to filter directories.
 
-'Esc', 'F10' or 'Meta + q' to exit.
-'Enter' to change directory to the selected.
-'Meta + Enter' to change directory to the entered.
-'Tab' for auto completion. If entered path is not valid it will be extended.
-'Shift + Tab' to paste selected path.
-'Ctrl + w' or 'Ctrl + u' to clean up input.
-'Meta + Backspace' to remove word.
-'Ctrl + c' to copy selected path to clipboard (pygtk support required).
-'Meta + f' to turn on/off fuzzy search.
-'Meta + s' to turn on/off case sensitive search.
-'Meta + l' to move search forward.
-'Meta + b' to move search backward.
-'Shift F2-F8' to set selected path as shortcut.
-'F2-F8' to paste shortcut path.
+    'Esc', 'F10' or 'Meta + q' to exit.
+    'Enter' to change directory to the selected.
+    'Meta + Enter' to change directory to the entered.
+    'Tab' for auto completion. If entered path is not valid it will be extended.
+    'Shift + Tab' to paste selected path.
+    'Ctrl + w' or 'Ctrl + u' to clean up input.
+    'Meta + Backspace' to remove word.
+    'Ctrl + c' to copy selected path to clipboard (pygtk support required).
+    'Meta + f' to turn on/off fuzzy search.
+    'Meta + s' to turn on/off case sensitive search.
+    'Meta + l' to move search forward.
+    'Meta + b' to move search backward.
+    'Shift F2-F8' to set selected path as shortcut.
+    'F2-F8' to paste shortcut path.
 
 Supported extra symbols:
 
