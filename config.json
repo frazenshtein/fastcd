@@ -1,5 +1,5 @@
 {
-    "version": "1.1.125",
+    "version": "1.1.126",
 
     "paths_history": "~/.local/share/fastcd/history.txt",
     "stored_paths": "~/.local/share/fastcd/shortcuts_paths.txt",
@@ -7,7 +7,7 @@
     "greeting_line": "Fastcd to: ",
 
     "enable_fuzzy_search": 1,
-    "minimal_fuzzy_search_len": 3,
+    "min_fuzzy_search_len": 3,
     "enable_case_sensitive_search": 0,
 
     "exit_after_coping_path": 1,
@@ -90,7 +90,7 @@
         "info": "dark red/default"
     },
 
-    /*list of regex patterns for paths that won't be stored*/
+    /* List of regex patterns. Path won't be stored if it matches any of specified patterns */
     "skip_list": [
     ]
 }

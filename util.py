@@ -98,3 +98,10 @@ def get_stdin_buffer():
 def get_dirs(path):
     return [dir for dir in os.listdir(path) if os.path.isdir(os.path.join(path, dir))]
 
+
+def get_cwd():
+    try:
+        return os.getcwd()
+    except OSError:
+        # current directory removed
+        return os.path.expanduser("~")
