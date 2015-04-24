@@ -5,6 +5,14 @@ fastcd
 
 Utility allows you to quickly navigate to the desired directory that has been recently visited.
 
+### Features
+
+* Extremely quick directory navigation 
+* Fuzzy search
+* Autocomplete
+* Shortcuts for directories
+* Flexible configuration
+
 ### Usage
 
 Jumper shows last visited directories and allows you change cwd quickly.
