@@ -3,7 +3,7 @@ fastcd
 
 ### Briefly
 
-Utility allows you to quickly navigate to the desired directory that has been recently visited.
+Fastcd allows you to navigate quickly to the desired directory that has been visited recently.
 
 ### Features
 
