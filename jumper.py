@@ -10,8 +10,14 @@ from os.path import expanduser
 try:
     import urwid
 except ImportError:
-    print("Cannot import urwid module. Install it first 'sudo apt-get install python-urwid' or 'pip install --user urwid'")
+    print("Cannot import urwid module. Install it first 'sudo pip install urwid' or 'pip install --user urwid'")
     exit(1)
+
+version = urwid.__version__.split(".")
+if version[0] < 0 or version[1] < 1:
+    print("Old urwid version detected. Please, upgrade it first 'sudo pip install --upgrade urwid'")
+    exit(1)
+
 
 import util
 import search
