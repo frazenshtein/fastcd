@@ -261,7 +261,10 @@ class PathFilterWidget(urwid.PopUpLauncher):
         self.path_edit.set_edit_pos(len(text))
 
     def get_text(self):
-        return self.path_edit.get_edit_text()
+        text = self.path_edit.get_edit_text()
+        if isinstance(text, unicode):
+            return text.encode("utf-8")
+        return text
 
     def create_pop_up(self):
         return self.popup
