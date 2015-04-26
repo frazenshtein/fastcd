@@ -14,7 +14,7 @@ except ImportError:
     exit(1)
 
 version = urwid.__version__.split(".")
-if version[0] < 0 or version[1] < 1:
+if version[0] < 1 or version[1] < 2:
     print("Old urwid version detected. Please, upgrade it first 'sudo pip install --upgrade urwid'")
     exit(1)
 
