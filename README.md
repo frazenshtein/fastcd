@@ -41,9 +41,10 @@ Supported extra symbols:
 
 Extra options and parameters can be found in config.json.
 
-### Example
+### Examples
 
-
+![Example](https://github.com/frazenshtein/images/blob/master/fastcd/example1.png)
+![Example](https://github.com/frazenshtein/images/blob/master/fastcd/example2.png)
 
 ### Tips
 
