@@ -7,7 +7,7 @@ Fastcd allows you to navigate quickly to the desired directory that has been vis
 
 ### Features
 
-* Extremely quick directory navigation 
+* Extremely quick directory navigation
 * Fuzzy search
 * Autocomplete
 * Shortcuts for directories
@@ -68,15 +68,6 @@ If you want to change directory immediately when pressing path shortcut ('F2'-'F
 
 ### Installation
 
-Requires python 2.7 + extra modules.
-Just type the following to install required python modules:
-
-    sudo apt-get install python-urwid
-
-If you do not have privileges try:
-
-    pip install --user urwid
-
 Get the utility:
 
     git clone https://github.com/frazenshtein/fastcd
@@ -90,3 +81,17 @@ a line:
 And reload bashrc in your terminal:
 
     source ~/.bashrc
+
+Utility requires python 2.7 + extra module.
+Just type the following to install required python modules:
+
+    sudo pip install urwid
+
+If you do not have privileges try:
+
+    pip install --user urwid
+
+If you do not have pip try first:
+
+    sudo apt-get install python-pip
+
