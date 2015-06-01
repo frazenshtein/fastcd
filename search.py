@@ -128,16 +128,17 @@ class FuzzySearchEngine(SearchEngine):
 
     To visualize the generated automatons, you can call:
     >> import search, os
-    >> search.FuzzySearchEngine("p*fast*fur$").dump_dot("fda.dot")
+    >> search.FuzzySearchEngine("p*fast*and furious$", narrowing_parts=["furi"]).dump_dot("fda.dot")
     >> os.system("dot fda.dot -Tpng -o fda.png")
     '''
 
     ANY_SYMBOL = chr(1)
 
-    def __init__(self, pattern, case_sensitive=False, minimal_fuzzy_pattern_len=3):
+    def __init__(self, pattern, case_sensitive=False, minimal_fuzzy_pattern_len=3, narrowing_parts=None):
         super(FuzzySearchEngine, self).__init__(pattern, case_sensitive)
         self.original_pattern = pattern
         self.case_sensitive = case_sensitive
+        self.narrowing_parts = narrowing_parts or []
         self.minimal_fuzzy_pattern_len = max(minimal_fuzzy_pattern_len, 2)
         if not case_sensitive:
             pattern = pattern.lower()
@@ -152,31 +153,67 @@ class FuzzySearchEngine(SearchEngine):
             if substr:
                 self.automatons.append(self.build_fda(substr))
 
-    def build_fda(self, pattern):
-        if len(pattern) < self.minimal_fuzzy_pattern_len:
-            return self.build_direct_fda(pattern)
-        return self.build_fuzzy_fda(pattern)
+    @staticmethod
+    def get_subpatterns(narrowing_parts, pattern, len_threshold):
+        # type (is direct), pattern
+        subpatterns = [(None, pattern)]
+        for narrow in narrowing_parts:
+            newsub = []
+            for _, subpattern in subpatterns:
+                for line in subpattern.split(narrow):
+                    if line:
+                        newsub.append((None, line))
+                    newsub.append((True, narrow))
+                # remove last narrow
+                newsub.pop()
+            if newsub:
+                subpatterns = newsub
+        for index in range(len(subpatterns)):
+            is_direct, pattern = subpatterns[index]
+            if is_direct is None:
+                subpatterns[index] = (len(pattern) < len_threshold, pattern)
+        return subpatterns
 
-    def build_direct_fda(self, pattern):
+    def build_fda(self, pattern):
+        subpatterns = self.get_subpatterns(self.narrowing_parts, pattern, self.minimal_fuzzy_pattern_len)
+        head = None
+        tail = None
+        shift = len(pattern)
+        for direct, subpattern in reversed(subpatterns):
+            shift -= len(subpattern)
+            if direct:
+                fda = self.build_direct_fda(subpattern, finite_state=head, level_shift=shift)
+            else:
+                fda = self.build_fuzzy_fda(subpattern, finite_state=head, level_shift=shift)
+            head = fda.init_state
+            if not tail:
+                tail = fda.finite_state
+        return Automaton(head, tail, pattern)
+
+    def build_direct_fda(self, pattern, finite_state=None, level_shift=0):
         states = []
         for index, symbol in enumerate(pattern):
-            state = State(symbol, level=index)
+            state = State(symbol, level=index, level_shift=level_shift)
             states.append(state)
         # append finite state
-        states.append(State(level=len(pattern)))
+        if finite_state:
+            states.append(finite_state)
+        else:
+            states.append(State(level=len(pattern), level_shift=level_shift))
         # link states
         for index in range(len(states) - 1):
             states[index].left_state = states[index + 1]
         return Automaton(states[0], states[-1], pattern)
 
-    def build_fuzzy_fda(self, pattern):
+    def build_fuzzy_fda(self, pattern, finite_state=None, level_shift=0):
         # create core states
-        init_state = State(pattern[0], pattern[1], self.ANY_SYMBOL, level=0)
+        init_state = State(pattern[0], pattern[1], self.ANY_SYMBOL, level=0, level_shift=level_shift)
         core_states = [init_state]
         for level, symbol in enumerate(pattern[1:], start=1):
-            state = State(symbol, level=level)
+            state = State(symbol, level=level, level_shift=level_shift)
             core_states.append(state)
-        finite_state = State(level=len(pattern))
+        if not finite_state:
+            finite_state = State(level=len(pattern), level_shift=level_shift)
         core_states.append(finite_state)
 
         # link core states
@@ -188,10 +225,10 @@ class FuzzySearchEngine(SearchEngine):
         # last level is already created, penultimate will be created is a special way, that's why pattern[:-2]
         for level, symbol in enumerate(pattern[:-2], start=1):
             # create state for left edge
-            left_state = State(pattern[level], pattern[level + 1], self.ANY_SYMBOL, level=level)
+            left_state = State(pattern[level], pattern[level + 1], self.ANY_SYMBOL, level=level, level_shift=level_shift)
 
             # create state for middle edge and link it with core state
-            middle_State = State(pattern[level - 1], level=level)
+            middle_State = State(pattern[level - 1], level=level, level_shift=level_shift)
             middle_State.left_state = core_states[level + 1]
 
             state.left_state = left_state
@@ -202,10 +239,10 @@ class FuzzySearchEngine(SearchEngine):
 
         # penultimate level is created in a special way
         level = len(pattern) - 1
-        left_state = State(right=self.ANY_SYMBOL, level=level)
+        left_state = State(right=self.ANY_SYMBOL, level=level, level_shift=level_shift)
         left_state.right_state = finite_state
 
-        middle_state = State(pattern[-2], level=level)
+        middle_state = State(pattern[-2], level=level, level_shift=level_shift)
         middle_state.left_state = finite_state
 
         state.left_state = left_state
@@ -334,8 +371,8 @@ class State(object):
 
     __slots__ = ['left', 'left_state', 'middle', 'middle_state', 'right', 'right_state', 'level']
 
-    def __init__(self, left=None, middle=None, right=None, level=0):
-        self.level = level
+    def __init__(self, left=None, middle=None, right=None, level=0, level_shift=0):
+        self.level = level + level_shift
         self.left = left
         self.middle = middle
         self.right = right

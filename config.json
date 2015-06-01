@@ -1,11 +1,12 @@
 {
-    "version": "1.2.139",
+    "version": "1.2.140",
 
     "paths_history": "~/.local/share/fastcd/history.txt",
     "stored_paths": "~/.local/share/fastcd/shortcuts_paths.txt",
 
     "greeting_line": "Fastcd to: ",
 
+    "search_from_any_pos": 0,
     "enable_fuzzy_search": 1,
     "min_fuzzy_search_len": 3,
     "enable_case_sensitive_search": 0,
@@ -39,6 +40,9 @@
         ],
         "fuzzy_search": [
             "meta f"
+        ],
+        "search_pos": [
+            "meta r"
         ],
         "case_sensitive": [
             "meta s"

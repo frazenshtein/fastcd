@@ -28,6 +28,7 @@ Start typing to filter directories.
     'Meta + Backspace' to remove word.
     'Ctrl + c' to copy selected path to clipboard (pygtk support required).
     'Meta + f' to turn on/off fuzzy search.
+    'Meta + r' to change search position (any pos / from the beginning of the directory name).
     'Meta + s' to turn on/off case sensitive search.
     'Meta + l' to move search forward.
     'Meta + b' to move search backward.

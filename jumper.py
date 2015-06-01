@@ -37,6 +37,7 @@ Start typing to filter directories.
 'Meta + Backspace' to remove word.
 'Ctrl + c' to copy selected path to clipboard (pygtk support required).
 'Meta + f' to turn on/off fuzzy search.
+'Meta + r' to change search position (any pos / from the beginning of the directory name).
 'Meta + s' to turn on/off case sensitive search.
 'Meta + l' to move search forward.
 'Meta + b' to move search backward.
@@ -313,6 +314,8 @@ class Display(object):
         self.view = None
         self.case_sensitive = bool(self.config["enable_case_sensitive_search"])
         self.fuzzy_search = bool(self.config["enable_fuzzy_search"])
+        # search will look for matches from the beginning of the directory name if false
+        self.search_from_any_pos = bool(self.config["search_from_any_pos"])
         self.search_offset = 0
         self.previously_selected_nonexistent_path = ""
         self.default_selected_item_index = 0
@@ -460,6 +463,9 @@ class Display(object):
         if input in self.shortcuts["fuzzy_search"]:
             self.fuzzy_search = not self.fuzzy_search
 
+        if input in self.shortcuts["search_pos"]:
+            self.search_from_any_pos = not self.search_from_any_pos
+
         if input in self.shortcuts["inc_search_offset"]:
             self.search_offset += 1
 
@@ -554,11 +560,14 @@ class Display(object):
         input_path = self.path_filter.get_text()
         # filter list
         if input_path:
-            widgets = []
+            if not self.search_from_any_pos and not input_path.startswith("/") and not input_path.startswith("~"):
+                input_path = "/" + input_path
+
             if self.fuzzy_search:
-                engine = search.FuzzySearchEngine(input_path, self.case_sensitive, self.config["min_fuzzy_search_len"])
+                engine = search.FuzzySearchEngine(input_path, self.case_sensitive, self.config["min_fuzzy_search_len"], narrowing_parts=["/"])
             else:
                 engine = search.RegexSearchEngine(input_path, self.case_sensitive)
+            widgets = []
             for path, exists in self.stored_paths:
                 for counter, match in enumerate(engine.finditer(path)):
                     if counter >= self.search_offset:
