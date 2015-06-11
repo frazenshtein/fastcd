@@ -318,7 +318,8 @@ class Display(object):
         self.search_from_any_pos = bool(self.config["search_from_any_pos"])
         self.search_offset = 0
         self.previously_selected_nonexistent_path = ""
-        self.default_selected_item_index = 0
+        # select by default oldpwd or last visited if there is no oldpwd
+        self.default_selected_item_index = 1
         self.stored_paths_filename = expanduser(self.config["stored_paths"])
 
         cwd = util.replace_home_with_tilde(util.get_cwd())
@@ -337,8 +338,9 @@ class Display(object):
         self.stored_paths.insert(0, (cwd, os.path.exists(expanduser(cwd))))
         if cwd != oldpwd:
             self.stored_paths.insert(1, (oldpwd, os.path.exists(expanduser(oldpwd))))
-            # previous directory should be selected by default
-            self.default_selected_item_index = 1
+
+        if len(self.stored_paths) < 2:
+            self.default_selected_item_index = 0
 
         signal.signal(signal.SIGINT, Display.hanlder_SIGINT)
 
