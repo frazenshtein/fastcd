@@ -15,7 +15,8 @@ Fastcd allows you to navigate quickly to the desired directory that has been vis
 
 ### Usage
 
-Jumper shows last visited directories and allows you change cwd quickly.
+Just enter 'j' in the terminal to launch jumper that shows
+last visited directories and allows you change cwd quickly.
 You can use arrows and Page Up/Down to navigate the list.
 Start typing to filter directories.
 
