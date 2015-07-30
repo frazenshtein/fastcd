@@ -525,7 +525,7 @@ class Display(object):
             self.update_listbox()
 
     def change_directory(self, path):
-        path = expanduser(path)
+        path = expanduser(path).rstrip(" ")
         # double Enter should return nearest path
         if path == self.previously_selected_nonexistent_path:
             path = util.get_nearest_existing_dir(path)
@@ -535,6 +535,8 @@ class Display(object):
                 self.previously_selected_nonexistent_path = path
                 self.info_text_header.set_text("Link refers to the not existing directory: '%s'" % path)
                 return
+        elif os.path.isfile(path):
+            path = os.path.dirname(path)
         elif not os.path.exists(path):
             self.previously_selected_nonexistent_path = path
             self.info_text_header.set_text("No such directory: '%s'" % path)
