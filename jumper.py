@@ -99,7 +99,9 @@ def load_config():
     ref_config = expand_paths(util.load_json(get_reference_config_path()))
     if os.path.exists(ref_config["user_config_file"]):
         usr_config = expand_paths(util.load_json(ref_config["user_config_file"]))
-        return util.patch_dict(ref_config, usr_config)
+        config = util.patch_dict(ref_config, usr_config)
+        config["user_config_file"] = ref_config["user_config_file"]
+        return config
     return ref_config
 
 

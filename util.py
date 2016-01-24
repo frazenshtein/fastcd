@@ -29,6 +29,7 @@ def obtain_lockfile(fd):
     while True:
         try:
             fcntl.lockf(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            return
         except IOError:
             time.sleep(0.1)
             continue
