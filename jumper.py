@@ -84,25 +84,49 @@ def add_sep(path):
     return path.rstrip("/") + "/"
 
 
-def load_config():
+def get_reference_config_path():
     module_path = os.path.dirname(os.path.realpath(__file__))
-    config_path = os.path.join(module_path, "config.json")
-    return util.load_json(config_path)
+    return os.path.join(module_path, "config.json")
+
+
+def load_config():
+    def expand_paths(config):
+        paths = ["history_file", "shortcuts_paths_file", "user_config_file"]
+        for param in paths:
+            config[param] = expanduser(config[param])
+        return config
+
+    ref_config = expand_paths(util.load_json(get_reference_config_path()))
+    if os.path.exists(ref_config["user_config_file"]):
+        usr_config = expand_paths(util.load_json(ref_config["user_config_file"]))
+        return util.patch_dict(ref_config, usr_config)
+    return ref_config
 
 
 def prepare_environment(config):
     # create directories
-    for param in ["paths_history", "stored_paths"]:
-        path = os.path.expanduser(config[param])
-        dirname = os.path.dirname(path)
+    for param in ["history_file", "shortcuts_paths_file", "user_config_file"]:
+        dirname = os.path.dirname(config[param])
         if not os.path.exists(dirname):
             try:
                 os.makedirs(dirname)
             except OSError:
                 pass
-        # create file
-        with open(path, "a"):
-            pass
+
+    # generate user config
+    user_config_file = config["user_config_file"]
+    if not os.path.exists(user_config_file):
+        with open(get_reference_config_path()) as file:
+            data = file.read()
+        # remove description warning
+        data = data[data.find("{"):]
+        with open(user_config_file, "w") as file:
+            file.write(data)
+
+    # create rest files
+    for param in ["history_file", "shortcuts_paths_file"]:
+        open(config[param], "a").close()
+
 
 
 def update_path_list(filename, path, limit):
@@ -338,14 +362,14 @@ class Display(object):
         self.previously_selected_nonexistent_path = ""
         # select by default oldpwd or last visited if there is no oldpwd
         self.default_selected_item_index = 1
-        self.stored_paths_filename = expanduser(self.config["stored_paths"])
+        self.shortcuts_paths_filename = self.config["shortcuts_paths_file"]
 
         cwd = util.replace_home_with_tilde(util.get_cwd())
         cwd = add_sep(cwd)
         oldpwd = util.replace_home_with_tilde(os.environ.get("OLDPWD", cwd))
         oldpwd = add_sep(oldpwd)
 
-        with open(expanduser(self.config["paths_history"])) as file:
+        with open(self.config["history_file"]) as file:
             for line in file.readlines():
                 path = line.strip()
                 if path in [cwd, oldpwd]:
@@ -503,7 +527,7 @@ class Display(object):
                 self.search_offset = 0
 
         if input in self.shortcuts["cd_to_path"]:
-            path = get_stored_path(self.stored_paths_filename, self.shortcuts["cd_to_path"].index(input))
+            path = get_stored_path(self.shortcuts_paths_filename, self.shortcuts["cd_to_path"].index(input))
             if path:
                 if self.config["exit_after_pressing_path_shortcut"]:
                     self.selected_path = path
@@ -521,7 +545,7 @@ class Display(object):
             selected = self.listbox.get_focus()[0]
             if selected:
                 selected_path = expanduser(selected.get_path())
-                store_path(self.stored_paths_filename, selected_path, self.shortcuts["store_path"].index(input))
+                store_path(self.shortcuts_paths_filename, selected_path, self.shortcuts["store_path"].index(input))
             return
 
         # clean up header
@@ -628,7 +652,7 @@ def main(args, config):
     prepare_environment(config)
 
     if args.list_shortcut_paths:
-        store_filename = expanduser(config["stored_paths"])
+        store_filename = config["shortcuts_paths_file"]
         if os.path.exists(store_filename):
             with open(store_filename) as file:
                 paths = [line.strip() for line in file.readlines()]
@@ -643,7 +667,7 @@ def main(args, config):
             if re.search(pattern, args.add_path):
                 return
 
-        history_filename = expanduser(config["paths_history"])
+        history_filename = config["history_file"]
         lockfile = os.path.dirname(history_filename) + ".lock"
         with open(lockfile, "w+") as lock:
             util.obtain_lockfile(lock)
@@ -651,7 +675,7 @@ def main(args, config):
             path = util.replace_home_with_tilde(path)
             path = re.sub(r"/{2,}", r"/", path)
             path = add_sep(path)
-            update_path_list(history_filename, path, config["paths_history_limit"])
+            update_path_list(history_filename, path, config["history_limit"])
     else:
         urwid.set_encoding("UTF-8")
         # interactive menu

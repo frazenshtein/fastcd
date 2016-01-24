@@ -29,7 +29,6 @@ def obtain_lockfile(fd):
     while True:
         try:
             fcntl.lockf(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-            return
         except IOError:
             time.sleep(0.1)
             continue
@@ -105,3 +104,22 @@ def get_cwd():
     except OSError:
         # current directory removed
         return os.path.expanduser("~")
+
+
+def patch_dict(src, patch, key_path=""):
+    assert isinstance(src, dict)
+    assert isinstance(patch, dict)
+
+    for key, value in src.items():
+        if key not in patch:
+            continue
+        key_path = key_path + "/" + key
+        if type(value) != type(patch[key]):
+            msg = "Type missmatch. Src:'{0}'|{1} Patch:{0}|{2}".format(key_path, type(value), type(patch[key]))
+            raise TypeError(msg)
+
+        if isinstance(src[key], dict):
+            patch_dict(src[key], patch[key], key_path)
+        elif src[key] != patch[key]:
+            src[key] = patch[key]
+    return src
