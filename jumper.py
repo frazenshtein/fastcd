@@ -13,8 +13,8 @@ except ImportError:
     print("Cannot import urwid module. Install it first 'sudo pip install urwid' or 'pip install --user urwid'")
     exit(1)
 
-version = urwid.__version__.split(".")
-if float(version[0] + "." + version[1]) < 1.1:
+URWID_VERSION = urwid.__version__.split(".")
+if float(URWID_VERSION[0] + "." + URWID_VERSION[1]) < 1.1:
     print("Old urwid version detected (%s). Please, upgrade it first 'sudo pip install --upgrade urwid'" % urwid.__version__)
     exit(1)
 
@@ -28,21 +28,21 @@ Jumper shows last visited directories and allows you change cwd quickly.
 You can use arrows and Page Up/Down to navigate the list.
 Start typing to filter directories.
 
-'Esc', 'F10' or 'Meta'+'q' to exit.
-'Enter' to change directory to the selected.
-'Meta + Enter' to change directory to the entered.
-'Tab' for auto completion. If entered path is not valid it will be extended.
-'Shift + Tab' to paste selected path.
-'Ctrl + w' or 'Ctrl + u' to clean up input.
-'Meta + Backspace' to remove word.
-'Ctrl + c' to copy selected path to clipboard (pygtk support required).
-'Meta + f' to turn on/off fuzzy search.
-'Meta + r' to change search position (any pos / from the beginning of the directory name).
-'Meta + s' to turn on/off case sensitive search.
-'Meta + l' to move search forward.
-'Meta + b' to move search backward.
-'Shift'+'F2'-'F8' to set selected path as shortcut.
-'F2'-'F8' to paste shortcut path.
+{exit} to exit.
+{cd_selected_path} to change directory to the selected.
+{cd_entered_path} to change directory to the entered.
+{autocomplete} for auto completion. If entered path is not valid it will be extended.
+{paste_selected_path} to paste selected path.
+{clean_input} to clean up input.
+{remove_word} to remove word.
+{copy_selected_path_to_clipboard} to copy selected path to clipboard (pygtk support required).
+{fuzzy_search} to turn on/off fuzzy search.
+{search_pos} to change search position (any pos / from the beginning of the directory name).
+{case_sensitive} to turn on/off case sensitive search.
+{inc_search_offset} to move search forward.
+{dec_search_offset} to move search backward.
+{store_path} to set selected path as shortcut.
+{cd_to_path} to paste shortcut path.
 
 Supported extra symbols:
 
@@ -52,8 +52,8 @@ Supported extra symbols:
 Extra options and parameters can be found in config.json.
 '''
 
-def parse_command_line():
-    parser = argparse.ArgumentParser(description=DESC, formatter_class=argparse.RawTextHelpFormatter)
+def parse_command_line(config):
+    parser = argparse.ArgumentParser(description=get_description(config["shortcuts"]), formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("-l", "--list-shortcut-paths", action='store_true', help="Displays list of stored shortcut paths")
     parser.add_argument("-a", "--add-path", default=None, help=argparse.SUPPRESS) # add path to base
     parser.add_argument("-o", "--output", metavar="FILE", default=None, help=argparse.SUPPRESS)
@@ -61,6 +61,23 @@ def parse_command_line():
 
     args = parser.parse_args()
     return args
+
+
+def get_description(shortcuts):
+    def representative(shortcut):
+        return " + ".join([p.capitalize() if len(p) > 1 else p for p in shortcut.split(" ")])
+
+    shortcuts_data = {}
+    for name, keys in shortcuts.items():
+        shortcut_enum = []
+        for shortcut in keys:
+            shortcut_enum.append("'%s'" % representative(shortcut))
+        if len(shortcut_enum) > 1:
+            shortcut_enum_text = ", ".join(shortcut_enum[:-1]) + " or " + shortcut_enum[-1]
+        else:
+            shortcut_enum_text = shortcut_enum[0]
+        shortcuts_data[name] = shortcut_enum_text
+    return DESC.format(**shortcuts_data)
 
 
 def add_sep(path):
@@ -144,7 +161,7 @@ class PathWidget(urwid.WidgetWrap):
                 ('fixed', shift, urwid.Text(""))
             ]
         else:
-            color = 'missing'
+            color = 'minor'
             items = [
                 ('fixed', shift, urwid.Text("*"))
             ]
@@ -214,10 +231,9 @@ class AutoCompletionPopup(urwid.WidgetWrap):
 
 class PathFilterWidget(urwid.PopUpLauncher):
 
-    def __init__(self, caption):
-        self.caption = caption
+    def __init__(self):
         self.path_cache = {}
-        self.path_edit = urwid.AttrWrap(urwid.Edit(caption), 'input')
+        self.path_edit = urwid.AttrWrap(urwid.Edit(), 'input')
         # TODO calc in %
         self.popup = AutoCompletionPopup(20, 20)
 
@@ -235,7 +251,7 @@ class PathFilterWidget(urwid.PopUpLauncher):
                     self.path_cache[abspath] = util.get_dirs(abspath)
                 dirs = self.path_cache[abspath]
                 if prefix:
-                    dirs = filter(lambda x: x.lower().startswith(prefix.lower()), dirs)
+                    dirs = [d for d in dirs if d.lower().startswith(prefix.lower())]
                 dirs = sorted(dirs, key=str.lower)
                 return path, dirs, prefix
         return path, [], ""
@@ -289,7 +305,7 @@ class PathFilterWidget(urwid.PopUpLauncher):
         return key
 
     def get_popup_left_pos(self):
-        return len(self.get_text()) + len(self.caption) - len(self.popup.prefix) - 1
+        return len(self.get_text()) - len(self.popup.prefix) - 1
 
     def get_pop_up_parameters(self):
         return {
@@ -310,12 +326,14 @@ class Display(object):
         self.header_pile = None
         self.info_text_header = None
         self.listbox = None
+        self.search_engine_label = None
         self.path_filter = None
         self.view = None
         self.case_sensitive = bool(self.config["enable_case_sensitive_search"])
         self.fuzzy_search = bool(self.config["enable_fuzzy_search"])
         # search will look for matches from the beginning of the directory name if false
         self.search_from_any_pos = bool(self.config["search_from_any_pos"])
+        self.search_engine_label_limit = 8
         self.search_offset = 0
         self.previously_selected_nonexistent_path = ""
         # select by default oldpwd or last visited if there is no oldpwd
@@ -342,10 +360,10 @@ class Display(object):
         if len(self.stored_paths) < 2:
             self.default_selected_item_index = 0
 
-        signal.signal(signal.SIGINT, Display.hanlder_SIGINT)
+        signal.signal(signal.SIGINT, Display.handler_sigint)
 
     @staticmethod
-    def hanlder_SIGINT(signum, frame):
+    def handler_sigint(signum, frame):
         raise urwid.ExitMainLoop()
 
     def run(self):
@@ -355,9 +373,16 @@ class Display(object):
         if self.stored_paths:
             self.listbox.set_focus(self.default_selected_item_index)
 
-        self.path_filter = PathFilterWidget(caption=self.config["greeting_line"])
+        self.path_filter = PathFilterWidget()
+        self.search_engine_label = urwid.AttrWrap(urwid.Text(self.get_search_engine_label_text(), align='right'), 'minor')
+        filter_column = urwid.Columns(
+            [
+                ('pack', urwid.Text(self.config["greeting_line"])),
+                self.path_filter,
+                (self.search_engine_label_limit, self.search_engine_label)
+            ])
         self.info_text_header = urwid.Text("")
-        self.header_pile = urwid.Pile([self.path_filter, urwid.Padding(urwid.AttrWrap(self.info_text_header, 'info'), left=2)])
+        self.header_pile = urwid.Pile([filter_column, urwid.Padding(urwid.AttrWrap(self.info_text_header, 'info'), left=2)])
         self.view = urwid.AttrWrap(urwid.Frame(self.listbox, header=self.header_pile), 'bg')
 
         palette = []
@@ -464,6 +489,7 @@ class Display(object):
 
         if input in self.shortcuts["fuzzy_search"]:
             self.fuzzy_search = not self.fuzzy_search
+            self.search_engine_label.set_text(self.get_search_engine_label_text())
 
         if input in self.shortcuts["search_pos"]:
             self.search_from_any_pos = not self.search_from_any_pos
@@ -560,6 +586,13 @@ class Display(object):
             self.path_filter.set_text(path)
             return path
 
+    def get_search_engine_label_text(self):
+        if self.fuzzy_search:
+            name = "fuzzy"
+        else:
+            name = "direct"
+        return "[%s]" % name[:self.search_engine_label_limit - 2]
+
     def update_listbox(self):
         input_path = self.path_filter.get_text()
         # filter list
@@ -591,8 +624,7 @@ class Display(object):
             self.listbox.set_focus(0)
 
 
-def main(args):
-    config = load_config()
+def main(args, config):
     prepare_environment(config)
 
     if args.list_shortcut_paths:
@@ -603,7 +635,7 @@ def main(args):
             while len(paths) < len(config["shortcuts"]["cd_to_path"]):
                 paths.append("")
             print("Shortcuts:")
-            smax_len = len(max(config["shortcuts"]["cd_to_path"], key=lambda x: len(x))) + 1
+            smax_len = len(max(config["shortcuts"]["cd_to_path"], key=len)) + 1
             for shortcut, path in zip(config["shortcuts"]["cd_to_path"], paths):
                 print("{:>{}} - {}".format(shortcut, smax_len, util.replace_home_with_tilde(path)))
     elif args.add_path:
@@ -639,5 +671,5 @@ def main(args):
 
 
 if __name__ == '__main__':
-    args = parse_command_line()
-    main(args)
+    CONFIG = load_config()
+    main(parse_command_line(CONFIG), CONFIG)

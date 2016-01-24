@@ -1,5 +1,5 @@
 {
-    "version": "1.2.143",
+    "version": "1.2.144",
 
     "paths_history": "~/.local/share/fastcd/history.txt",
     "stored_paths": "~/.local/share/fastcd/shortcuts_paths.txt",
@@ -64,19 +64,13 @@
             "f2",
             "f3",
             "f4",
-            "f5",
-            "f6",
-            "f7",
-            "f8"
+            "f5"
         ],
         "store_path": [
             "shift f2",
             "shift f3",
             "shift f4",
-            "shift f5",
-            "shift f6",
-            "shift f7",
-            "shift f8"
+            "shift f5"
         ]
     },
 
@@ -89,12 +83,13 @@
         "text": "default/default",
         "selected": "black/dark cyan",
         "match": "dark cyan/default",
-        "missing": "dark gray/default",
+        "minor": "dark gray/default",
         "input": "default/default",
         "info": "dark red/default"
     },
 
     /* List of regex patterns. Path won't be stored if it matches any of specified patterns */
     "skip_list": [
+        "arcadia/devtools/ya/"
     ]
 }

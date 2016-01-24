@@ -2,8 +2,7 @@ import os
 import sys
 import unittest
 
-currDir = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(os.path.join(currDir, ".."))
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 
 from search import FuzzySearchEngine, RegexSearchEngine
 
@@ -45,29 +44,29 @@ class FuzzyEngineTests(unittest.TestCase):
         self.compare_search("Fast*Fast$", "Fast and furious. Fast and Fast", True)
         self.compare_search("Fast****ous*Fast$", "Fast and furious. Fast and Fast", True)
 
-    def compare_fuzzy(self, pattern, string, cs, expected, start):
-        fuzzy = FuzzySearchEngine(pattern, cs)
+    def compare_fuzzy(self, pattern, string, expected, start, cs=False):
+        fuzzy = FuzzySearchEngine(pattern, case_sensitive=cs)
         match = fuzzy.search(string)
         self.assertIsNotNone(match)
         self.assertEqual(match.group(), expected)
         self.assertEqual(match.start(), start)
 
     def test_simple_fuzzy(self):
-        self.compare_fuzzy("fas", "f s", cs=False, expected="f s", start=0)
-        self.compare_fuzzy("afst", "pretty fast", cs=False, expected="fast", start=7)
-        self.compare_fuzzy("dast", "pretty fast", cs=False, expected="fast", start=7)
-        self.compare_fuzzy("Dast", "pretty fast", cs=False, expected="fast", start=7)
+        self.compare_fuzzy("fas", "f s", expected="f s", start=0)
+        self.compare_fuzzy("afst", "pretty fast", expected="fast", start=7)
+        self.compare_fuzzy("dast", "pretty fast", expected="fast", start=7)
+        self.compare_fuzzy("Dast", "pretty fast", expected="fast", start=7)
         self.compare_fuzzy("Dast", "pretty fast", cs=True, expected="fast", start=7)
         self.compare_fuzzy("aFst", "pretty Fast", cs=True, expected="Fast", start=7)
-        self.compare_fuzzy("ast", "pretty fast", cs=False, expected="ast", start=8)
+        self.compare_fuzzy("ast", "pretty fast", expected="ast", start=8)
 
     def test_fuzzy_with_asterisks(self):
-        self.compare_fuzzy("fat*us", "fast and furious", cs=False, expected="fast and furious", start=0)
-        self.compare_fuzzy("das*us$", "fast and furious/", cs=False, expected="fast and furious/", start=0)
-        self.compare_fuzzy("fast*fast", "fast fast fast", cs=False, expected="fast fast", start=0)
-        self.compare_fuzzy("fast*fast$", "fast fast fast", cs=False, expected="fast fast fast", start=0)
-        self.compare_fuzzy("fat*fast", "fast fat fast", cs=False, expected="fast fat fast", start=0)
-        self.compare_fuzzy("das***nd***fun", "fast and furious/", cs=False, expected="fast and fur", start=0)
+        self.compare_fuzzy("fat*us", "fast and furious", expected="fast and furious", start=0)
+        self.compare_fuzzy("das*us$", "fast and furious/", expected="fast and furious/", start=0)
+        self.compare_fuzzy("fast*fast", "fast fast fast", expected="fast fast", start=0)
+        self.compare_fuzzy("fast*fast$", "fast fast fast", expected="fast fast fast", start=0)
+        self.compare_fuzzy("fat*fast", "fast fat fast", expected="fast fat fast", start=0)
+        self.compare_fuzzy("das***nd***fun", "fast and furious/", expected="fast and fur", start=0)
 
     def compare_finditer(self, pattern, string, expected):
         fuzzy = FuzzySearchEngine(pattern)
