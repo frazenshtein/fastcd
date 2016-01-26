@@ -78,7 +78,7 @@ class RegexSearchEngine(SearchEngine):
         super(RegexSearchEngine, self).__init__(pattern, case_sensitive)
         special_symbols = {
             r"\*": ".*?",
-            r"\$": r"\/?$",
+            r"\$": r"$",
         }
         pattern = re.escape(pattern)
         for k, v in special_symbols.items():
@@ -147,7 +147,7 @@ class FuzzySearchEngine(SearchEngine):
         eol_pos = pattern.find("$")
         self.end_of_line = eol_pos != -1
         if self.end_of_line:
-            pattern = pattern[:eol_pos].rstrip("/")
+            pattern = pattern[:eol_pos]
         self.automatons = []
         for substr in pattern.split("*"):
             if substr:
@@ -290,10 +290,6 @@ class FuzzySearchEngine(SearchEngine):
                     if not match:
                         return None
                     elif match.end() == len(string):
-                        break
-                    # separator '/' is allowed between the last pattern and symbol '$'
-                    elif match.end() == len(string) - 1 and string[-1] == "/":
-                        match._end += 1
                         break
                     pos = match.end()
             else:

@@ -4,7 +4,7 @@
     See 'user_config_file' parameter.
 */
 {
-    "version": "1.2.146",
+    "version": "1.2.147",
 
     "history_file": "~/.local/share/fastcd/history.txt",
     "shortcuts_paths_file": "~/.local/share/fastcd/shortcuts_paths.txt",
@@ -66,13 +66,13 @@
         "remove_word": [
             "meta backspace"
         ],
-        "cd_to_path": [
+        "cd_to_shortcut_path": [
             "f2",
             "f3",
             "f4",
             "f5"
         ],
-        "store_path": [
+        "store_shortcut_path": [
             "shift f2",
             "shift f3",
             "shift f4",

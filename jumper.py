@@ -41,8 +41,8 @@ Start typing to filter directories.
 {case_sensitive} to turn on/off case sensitive search.
 {inc_search_offset} to move search forward.
 {dec_search_offset} to move search backward.
-{store_path} to set selected path as shortcut.
-{cd_to_path} to paste shortcut path.
+{store_shortcut_path} to set selected path as shortcut.
+{cd_to_shortcut_path} to paste shortcut path.
 
 Supported extra symbols:
 
@@ -78,10 +78,6 @@ def get_description(shortcuts):
             shortcut_enum_text = shortcut_enum[0]
         shortcuts_data[name] = shortcut_enum_text
     return DESC.format(**shortcuts_data)
-
-
-def add_sep(path):
-    return path.rstrip("/") + "/"
 
 
 def get_reference_config_path():
@@ -130,6 +126,12 @@ def prepare_environment(config):
         open(config[param], "a").close()
 
 
+def path_strip(path):
+    # root path
+    if path and path == "/":
+        return path
+    return path.rstrip("/")
+
 
 def update_path_list(filename, path, limit):
     if os.path.exists(filename):
@@ -149,7 +151,7 @@ def update_path_list(filename, path, limit):
     os.rename(filename + ".tmp", filename)
 
 
-def get_stored_path(filename, path_index):
+def get_shortcut_path(filename, path_index):
     if not os.path.exists(filename):
         return ""
     with open(filename) as file:
@@ -160,7 +162,7 @@ def get_stored_path(filename, path_index):
     return ""
 
 
-def store_path(filename, path, path_index):
+def store_shortcut_path(filename, path, path_index):
     with open(filename) as file:
         stored_paths = [line.strip() for line in file.readlines()]
     # extend list
@@ -210,6 +212,7 @@ class PathWidget(urwid.WidgetWrap):
 
     def keypress(self, size, key):
         return key
+
 
 class AutoCompletionPopup(urwid.WidgetWrap):
 
@@ -365,23 +368,7 @@ class Display(object):
         # select by default oldpwd or last visited if there is no oldpwd
         self.default_selected_item_index = 1
         self.shortcuts_paths_filename = self.config["shortcuts_paths_file"]
-
-        cwd = util.replace_home_with_tilde(util.get_cwd())
-        cwd = add_sep(cwd)
-        oldpwd = util.replace_home_with_tilde(os.environ.get("OLDPWD", cwd))
-        oldpwd = add_sep(oldpwd)
-
-        with open(self.config["history_file"]) as file:
-            for line in file.readlines():
-                path = line.strip()
-                if path in [cwd, oldpwd]:
-                    continue
-                exists = os.path.exists(expanduser(path))
-                self.stored_paths.append((path, exists))
-        # cwd always first, prev path in the current shell is always second if available
-        self.stored_paths.insert(0, (cwd, os.path.exists(expanduser(cwd))))
-        if cwd != oldpwd:
-            self.stored_paths.insert(1, (oldpwd, os.path.exists(expanduser(oldpwd))))
+        self.stored_paths = self.get_stored_paths()
 
         if len(self.stored_paths) < 2:
             self.default_selected_item_index = 0
@@ -443,6 +430,26 @@ class Display(object):
             return ""
         return util.replace_home_with_tilde(self.selected_path)
 
+    def get_stored_paths(self):
+        cwd = util.replace_home_with_tilde(util.get_cwd())
+        cwd = path_strip(cwd)
+        oldpwd = util.replace_home_with_tilde(os.environ.get("OLDPWD", cwd))
+        oldpwd = path_strip(oldpwd)
+        paths = []
+
+        with open(self.config["history_file"]) as file:
+            for line in file.readlines():
+                path = line.strip()
+                if path in [cwd, oldpwd]:
+                    continue
+                exists = os.path.exists(expanduser(path))
+                paths.append((path_strip(path), exists))
+        # cwd always first, prev path in the current shell is always second if available
+        paths.insert(0, (cwd, os.path.exists(expanduser(cwd))))
+        if cwd != oldpwd:
+            paths.insert(1, (oldpwd, os.path.exists(expanduser(oldpwd))))
+        return paths
+
     def is_shortcut(self, input):
         return filter(lambda x: input in x, self.shortcuts.values()) != []
 
@@ -491,7 +498,7 @@ class Display(object):
                 path = self.extend_path_filter_text() or path
             # TODO ??? hack
             if path == "~":
-                path = add_sep(path)
+                path = path_strip(path)
                 self.path_filter.set_text(path)
             self.path_filter.autocomplete()
 
@@ -501,7 +508,7 @@ class Display(object):
 
         if input in self.shortcuts["remove_word"]:
             path = self.path_filter.get_text()
-            path = path.rstrip("/")
+            path = path_strip(path)
             if "/" in path:
                 path, _ = path.rsplit("/", 1)
                 if path:
@@ -528,8 +535,8 @@ class Display(object):
             if self.search_offset < 0:
                 self.search_offset = 0
 
-        if input in self.shortcuts["cd_to_path"]:
-            path = get_stored_path(self.shortcuts_paths_filename, self.shortcuts["cd_to_path"].index(input))
+        if input in self.shortcuts["cd_to_shortcut_path"]:
+            path = get_shortcut_path(self.shortcuts_paths_filename, self.shortcuts["cd_to_shortcut_path"].index(input))
             if path:
                 if self.config["exit_after_pressing_path_shortcut"]:
                     self.selected_path = path
@@ -543,11 +550,11 @@ class Display(object):
                 # do nothing
                 return
 
-        if input in self.shortcuts["store_path"]:
+        if input in self.shortcuts["store_shortcut_path"]:
             selected = self.listbox.get_focus()[0]
             if selected:
                 selected_path = expanduser(selected.get_path())
-                store_path(self.shortcuts_paths_filename, selected_path, self.shortcuts["store_path"].index(input))
+                store_shortcut_path(self.shortcuts_paths_filename, selected_path, self.shortcuts["store_shortcut_path"].index(input))
             return
 
         # clean up header
@@ -605,10 +612,10 @@ class Display(object):
                 path = selected.path
             # remove / to prevent popup appearance
             # when autocompletion called for first time
-            if path.rstrip("/") == self.path_filter.get_text().rstrip("/"):
+            if path_strip(path) == path_strip(self.path_filter.get_text()):
                 path = selected.get_path()
             else:
-                path = path.rstrip("/")
+                path = path_strip(path)
             self.path_filter.set_text(path)
             return path
 
@@ -658,11 +665,11 @@ def main(args, config):
         if os.path.exists(store_filename):
             with open(store_filename) as file:
                 paths = [line.strip() for line in file.readlines()]
-            while len(paths) < len(config["shortcuts"]["cd_to_path"]):
+            while len(paths) < len(config["shortcuts"]["cd_to_shortcut_path"]):
                 paths.append("")
             print("Shortcuts:")
-            smax_len = len(max(config["shortcuts"]["cd_to_path"], key=len)) + 1
-            for shortcut, path in zip(config["shortcuts"]["cd_to_path"], paths):
+            smax_len = len(max(config["shortcuts"]["cd_to_shortcut_path"], key=len)) + 1
+            for shortcut, path in zip(config["shortcuts"]["cd_to_shortcut_path"], paths):
                 print("{:>{}} - {}".format(shortcut, smax_len, util.replace_home_with_tilde(path)))
     elif args.add_path:
         for pattern in config["skip_list"]:
@@ -676,7 +683,7 @@ def main(args, config):
             path = args.add_path
             path = util.replace_home_with_tilde(path)
             path = re.sub(r"/{2,}", r"/", path)
-            path = add_sep(path)
+            path = path_strip(path)
             update_path_list(history_filename, path, config["history_limit"])
     else:
         urwid.set_encoding("UTF-8")
