@@ -1,14 +1,14 @@
 /*
     Don't edit this reference configuration file.
-    All setting changes should be made in the user configuration file.
+    All settings changes should be made in the user configuration file.
     See 'user_config_file' parameter.
 */
 {
-    "version": "1.2.148",
+    "version": "1.2.149",
 
+    "user_config_file": "~/.local/share/fastcd/config.json",
     "history_file": "~/.local/share/fastcd/history.txt",
     "shortcuts_paths_file": "~/.local/share/fastcd/shortcuts_paths.txt",
-    "user_config_file": "~/.local/share/fastcd/config.json",
 
     "history_limit": 1000,
 
@@ -96,6 +96,7 @@
 
     /* List of regex patterns. Path won't be stored if it matches any of specified patterns */
     "skip_list": [
+        "arcadia/devtools/ya$",
         "arcadia/devtools/ya/"
     ]
 }
