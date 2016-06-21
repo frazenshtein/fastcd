@@ -133,12 +133,19 @@ def path_strip(path):
     return path.rstrip("/")
 
 
-def update_path_list(filename, path, limit):
+def update_path_list(filename, path, limit, skip_list):
     if os.path.exists(filename):
         with open(filename) as file:
             paths = [l.strip() for l in file.readlines()]
     else:
         paths = []
+
+    def in_skip_list(path):
+        for pattern in skip_list:
+            if re.search(pattern, path):
+                return True
+    # remove unwanted paths - keep history clean
+    paths = [p for p in paths if not in_skip_list(p)]
     # path already in data
     if path in paths:
         # rise path upward
@@ -442,13 +449,6 @@ class Display(object):
                 path = line.strip()
                 if path in [cwd, oldpwd]:
                     continue
-                skip = False
-                for pattern in self.config["skip_list"]:
-                    if re.search(pattern, path):
-                        skip = True
-                        break
-                if skip:
-                    continue
                 exists = os.path.exists(expanduser(path))
                 paths.append((path_strip(path), exists))
         # cwd always first, prev path in the current shell is always second if available
@@ -691,7 +691,7 @@ def main(args, config):
             path = util.replace_home_with_tilde(path)
             path = re.sub(r"/{2,}", r"/", path)
             path = path_strip(path)
-            update_path_list(history_filename, path, config["history_limit"])
+            update_path_list(history_filename, path, config["history_limit"], config["skip_list"])
     else:
         urwid.set_encoding("UTF-8")
         # interactive menu

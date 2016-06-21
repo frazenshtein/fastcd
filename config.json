@@ -4,7 +4,7 @@
     See 'user_config_file' parameter.
 */
 {
-    "version": "1.2.149",
+    "version": "1.2.150",
 
     "user_config_file": "~/.local/share/fastcd/config.json",
     "history_file": "~/.local/share/fastcd/history.txt",
