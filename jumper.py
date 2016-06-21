@@ -442,6 +442,13 @@ class Display(object):
                 path = line.strip()
                 if path in [cwd, oldpwd]:
                     continue
+                skip = False
+                for pattern in self.config["skip_list"]:
+                    if re.search(pattern, path):
+                        skip = True
+                        break
+                if skip:
+                    continue
                 exists = os.path.exists(expanduser(path))
                 paths.append((path_strip(path), exists))
         # cwd always first, prev path in the current shell is always second if available
