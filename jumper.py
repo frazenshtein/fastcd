@@ -369,7 +369,7 @@ class Display(object):
         self.fuzzy_search = bool(self.config["enable_fuzzy_search"])
         # search will look for matches from the beginning of the directory name if false
         self.search_from_any_pos = bool(self.config["search_from_any_pos"])
-        self.search_engine_label_limit = 8
+        self.search_engine_label_limit = 20
         self.search_offset = 0
         self.previously_selected_nonexistent_path = ""
         # select by default oldpwd or last visited if there is no oldpwd
@@ -533,6 +533,7 @@ class Display(object):
 
         if input in self.shortcuts["search_pos"]:
             self.search_from_any_pos = not self.search_from_any_pos
+            self.search_engine_label.set_text(self.get_search_engine_label_text())
 
         if input in self.shortcuts["inc_search_offset"]:
             self.search_offset += 1
@@ -627,11 +628,18 @@ class Display(object):
             return path
 
     def get_search_engine_label_text(self):
+        parts = []
         if self.fuzzy_search:
-            name = "fuzzy"
+            parts.append("fuzzy")
         else:
-            name = "direct"
-        return "[%s]" % name[:self.search_engine_label_limit - 2]
+            parts.append("direct")
+
+        if self.search_from_any_pos:
+            parts.append("any pos")
+        else:
+            parts.append("/headed")
+
+        return "[%s]" % " ".join(parts)[:self.search_engine_label_limit - 2]
 
     def update_listbox(self):
         input_path = self.path_filter.get_text()
