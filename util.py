@@ -7,7 +7,9 @@ import copy
 import json
 import time
 import fcntl
+import struct
 import termios
+import contextlib
 
 
 HOMEDIR = os.environ["HOME"]
@@ -133,3 +135,44 @@ def patch_dict(src, patch, key_path=""):
         elif src[key] != patch[key]:
             src[key] = patch[key]
     return src
+
+
+def get_term_width(stream=sys.stdout):
+    if not hasattr(stream, 'fileno') or not os.isatty(stream.fileno()):
+        return None
+    res = fcntl.ioctl(stream.fileno(), termios.TIOCGWINSZ, struct.pack('HHHH', 0, 0, 0, 0))
+    return struct.unpack('HHHH', res)[1]
+
+
+def print_status(msg, stream=sys.stdout, truncate=False):
+    msg = str(msg)
+    term_width = get_term_width(stream)
+    if not term_width:
+        return
+
+    if truncate:
+        msg = msg[:term_width]
+
+    if len(msg) > term_width:
+        stream.write("\r" + msg)
+        stream.flush()
+    else:
+        stream.write("\r" + msg)
+        stream.write(" " * (term_width - len(msg)))
+        stream.flush()
+
+
+def remove_status(stream=sys.stdout):
+    term_width = get_term_width(stream)
+    if not term_width:
+        return
+
+    stream.write("\r" + " " * term_width)
+    stream.flush()
+
+
+@contextlib.contextmanager
+def with_status(msg, stream=sys.stdout, truncate=False):
+    print_status(msg, stream, truncate)
+    yield
+    remove_status()

@@ -4,15 +4,17 @@
     See 'user_config_file' parameter.
 */
 {
-    "version": "1.2.152",
+    "version": "1.2.153",
 
-    "user_config_file": "~/.local/share/fastcd/config.json",
     "history_file": "~/.local/share/fastcd/history.txt",
     "shortcuts_paths_file": "~/.local/share/fastcd/shortcuts_paths.txt",
+    "user_config_file": "~/.local/share/fastcd/config.json",
 
     "history_limit": 1000,
 
     "greeting_line": "Fastcd to: ",
+
+    "check_directory_existence": 1,
 
     "search_from_any_pos": 0,
     "enable_fuzzy_search": 1,
@@ -96,7 +98,7 @@
 
     /* List of regex patterns. Path won't be stored if it matches any of specified patterns */
     "skip_list": [
-        "arcadia/devtools/ya$",
-        "arcadia/devtools/ya/"
+        "arcadia/devtools/ya-dev$",
+        "arcadia/devtools/ya-dev/"
     ]
 }

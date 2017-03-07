@@ -457,15 +457,26 @@ class Display(object):
 
         with open(self.config["history_file"]) as afile:
             entries = afile.read().split("\n")
-        # XXX
+
+        check_existence = self.config["check_directory_existence"]
         # this may take a while - print something
         # there may be network paths or meta info might be not in the system cache
+        if check_existence:
+            util.print_status("Checking the existence of directories...", truncate=True)
+
         for line in entries:
             path = line.strip()
             if path in [cwd, oldpwd]:
                 continue
-            exists = os.path.exists(expanduser(path))
+            if check_existence:
+                exists = os.path.exists(expanduser(path))
+            else:
+                exists = True
             paths.append((path_strip(path), exists))
+
+        if check_existence:
+            util.remove_status()
+
         # cwd always first, prev path in the current shell is always second if available
         paths.insert(0, (cwd, os.path.exists(expanduser(cwd))))
         if cwd != oldpwd:
