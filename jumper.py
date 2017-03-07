@@ -7,6 +7,17 @@ import signal
 import argparse
 from os.path import expanduser
 
+# # XXX
+# def step(msg):
+#     import sys
+#     import time
+#     if "--stages" in sys.argv:
+#         current = time.time()
+#         passed = getattr(step, 'last', current)
+#         with open(os.path.join(os.path.dirname(__file__), "stages.log"), "a") as afile:
+#             afile.write("[{:.5f} | {:.2f}] {}\n".format(current - passed, current, msg))
+#         setattr(step, 'last', current)
+
 try:
     import urwid
 except ImportError:
@@ -17,7 +28,6 @@ URWID_VERSION = urwid.__version__.split(".")
 if float(URWID_VERSION[0] + "." + URWID_VERSION[1]) < 1.1:
     print("Old urwid version detected (%s). Please, upgrade it first 'sudo pip install --upgrade urwid'" % urwid.__version__)
     exit(1)
-
 
 import util
 import search
@@ -58,6 +68,7 @@ def parse_command_line(config):
     parser.add_argument("-a", "--add-path", default=None, help=argparse.SUPPRESS) # add path to base
     parser.add_argument("-o", "--output", metavar="FILE", default=None, help=argparse.SUPPRESS)
     parser.add_argument("--escape-special-symbols", action='store_true', help=argparse.SUPPRESS)
+    parser.add_argument("--stages", action='store_true', help=argparse.SUPPRESS)  # XXX
 
     args = parser.parse_args()
     return args
@@ -114,12 +125,12 @@ def prepare_environment(config):
     # generate user config
     user_config_file = config["user_config_file"]
     if not os.path.exists(user_config_file):
-        with open(get_reference_config_path()) as file:
-            data = file.read()
+        with open(get_reference_config_path()) as afile:
+            data = afile.read()
         # remove description warning
         data = data[data.find("{"):]
-        with open(user_config_file, "w") as file:
-            file.write(data)
+        with open(user_config_file, "w") as afile:
+            afile.write(data)
 
     # create rest files
     for param in ["history_file", "shortcuts_paths_file"]:
@@ -135,8 +146,8 @@ def path_strip(path):
 
 def update_path_list(filename, path, limit, skip_list):
     if os.path.exists(filename):
-        with open(filename) as file:
-            paths = [l.strip() for l in file.readlines()]
+        with open(filename) as afile:
+            paths = [l.strip() for l in afile.readlines()]
     else:
         paths = []
 
@@ -151,9 +162,9 @@ def update_path_list(filename, path, limit, skip_list):
         # rise path upward
         paths.remove(path)
     paths = [path] + paths[:limit]
-    with open(filename + ".tmp", "w") as file:
+    with open(filename + ".tmp", "w") as afile:
         for path in paths:
-            file.write("%s\n" % path)
+            afile.write("%s\n" % path)
     # change file atomically
     os.rename(filename + ".tmp", filename)
 
@@ -161,8 +172,8 @@ def update_path_list(filename, path, limit, skip_list):
 def get_shortcut_path(filename, path_index):
     if not os.path.exists(filename):
         return ""
-    with open(filename) as file:
-        data = file.read()
+    with open(filename) as afile:
+        data = afile.read()
     for num, line in enumerate(data.split("\n")):
         if num == path_index:
             return util.get_nearest_existing_dir(expanduser(line)) or ""
@@ -170,16 +181,16 @@ def get_shortcut_path(filename, path_index):
 
 
 def store_shortcut_path(filename, path, path_index):
-    with open(filename) as file:
-        stored_paths = [line.strip() for line in file.readlines()]
+    with open(filename) as afile:
+        stored_paths = [line.strip() for line in afile.readlines()]
     # extend list
     for _ in range(path_index + 1 - len(stored_paths)):
         stored_paths.append("")
     stored_paths[path_index] = path
 
-    with open(filename, "w") as file:
+    with open(filename, "w") as afile:
         for path in stored_paths:
-            file.write(path + "\n")
+            afile.write(path + "\n")
 
 
 class PathWidget(urwid.WidgetWrap):
@@ -412,9 +423,9 @@ class Display(object):
             palette.append(entry)
 
         # there may be data that user already entered before MainLoop was launched
-        buffer = util.get_stdin_buffer()
-        if buffer:
-            self.path_filter.set_text(buffer)
+        buff = util.get_stdin_buffer(one_line=True)
+        if buff:
+            self.path_filter.set_text(buff)
             self.update_listbox()
             # TODO This is temporary fix, it seems to me that cleaning of the list is not really correct
             # steps to reproduce problem:
@@ -444,13 +455,17 @@ class Display(object):
         oldpwd = path_strip(oldpwd)
         paths = []
 
-        with open(self.config["history_file"]) as file:
-            for line in file.readlines():
-                path = line.strip()
-                if path in [cwd, oldpwd]:
-                    continue
-                exists = os.path.exists(expanduser(path))
-                paths.append((path_strip(path), exists))
+        with open(self.config["history_file"]) as afile:
+            entries = afile.read().split("\n")
+        # XXX
+        # this may take a while - print something
+        # there may be network paths or meta info might be not in the system cache
+        for line in entries:
+            path = line.strip()
+            if path in [cwd, oldpwd]:
+                continue
+            exists = os.path.exists(expanduser(path))
+            paths.append((path_strip(path), exists))
         # cwd always first, prev path in the current shell is always second if available
         paths.insert(0, (cwd, os.path.exists(expanduser(cwd))))
         if cwd != oldpwd:
@@ -678,8 +693,8 @@ def main(args, config):
     if args.list_shortcut_paths:
         store_filename = config["shortcuts_paths_file"]
         if os.path.exists(store_filename):
-            with open(store_filename) as file:
-                paths = [line.strip() for line in file.readlines()]
+            with open(store_filename) as afile:
+                paths = [line.strip() for line in afile.readlines()]
             while len(paths) < len(config["shortcuts"]["cd_to_shortcut_path"]):
                 paths.append("")
             print("Shortcuts:")
@@ -712,8 +727,8 @@ def main(args, config):
             for symbol in symbols:
                 selected_path = selected_path.replace(symbol, "\\" + symbol)
         if args.output:
-            with open(args.output, "w") as file:
-                file.write(selected_path)
+            with open(args.output, "w") as afile:
+                afile.write(selected_path)
         else:
             print(selected_path)
 

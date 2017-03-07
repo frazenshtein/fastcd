@@ -74,7 +74,7 @@ def load_json(filename):
     return convert_json(jsonData)
 
 
-def get_stdin_buffer():
+def get_stdin_buffer(one_line=False):
     # https://stackoverflow.com/questions/4327942/non-buffering-stdin-reading
     try:
         stdin = sys.stdin.fileno()
@@ -87,7 +87,16 @@ def get_stdin_buffer():
         tty_attrs[6][termios.VTIME] = 0
         try:
             termios.tcsetattr(stdin, termios.TCSANOW, tty_attrs)
-            return sys.stdin.read()
+            if one_line:
+                symbols = []
+                while True:
+                    char = sys.stdin.read(1)
+                    if char in ['', '\n']:
+                        break
+                    symbols.append(char)
+                return ''.join(symbols)
+            else:
+                return sys.stdin.read()
         finally:
             termios.tcsetattr(stdin, termios.TCSANOW, original_tty_attrs)
     except Exception:
