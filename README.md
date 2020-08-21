@@ -15,11 +15,13 @@ Fastcd allows you to navigate quickly to the desired directory that has been vis
 
 ### Usage
 
-Just enter 'j' in the terminal to launch jumper that shows
-last visited directories and allows you change cwd quickly.
+Just enter 'j' in the terminal to launch fastcd's jumber.
+
+Jumper shows last visited directories and allows you to change cwd quickly.
 You can use arrows and Page Up/Down to navigate the list.
 Start typing to filter directories.
 
+    Control:
     'Esc', 'F10' or 'Meta + q' to exit.
     'Enter' to change directory to the selected.
     'Meta + Enter' to change directory to the entered.
@@ -28,16 +30,19 @@ Start typing to filter directories.
     'Ctrl + w' or 'Ctrl + u' to clean up input.
     'Meta + Backspace' to remove word.
     'Ctrl + c' to copy selected path to clipboard (pygtk support required).
+
+    Search:
     'Meta + f' to turn on/off fuzzy search.
     'Meta + r' to change search position (any pos / from the beginning of the directory name).
     'Meta + s' to turn on/off case sensitive search.
     'Meta + l' to move search forward.
     'Meta + b' to move search backward.
-    'Shift F2-F8' to set selected path as shortcut.
-    'F2-F8' to paste shortcut path.
+
+    Shortcuts:
+    'Shift + F2', 'Shift + F3', 'Shift + F4' or 'Shift + F5' to set selected path as shortcut.
+    'F2', 'F3', 'F4' or 'F5' to paste shortcut path.
 
 Supported extra symbols:
-
     * - any number of any character
     $ - end of the line
 
@@ -73,6 +78,7 @@ If you want to change directory immediately when pressing path shortcut ('F2'-'F
 
 Get the utility:
 
+    cd $HOME
     git clone https://github.com/frazenshtein/fastcd
 
 Each user who wants to use fastcd should source the
@@ -85,16 +91,15 @@ And reload bashrc in your terminal:
 
     source ~/.bashrc
 
-Utility requires python 2.7 + extra module.
+Utility requires python 3 + extra module.
 Just type the following to install required python modules:
 
-    sudo pip install urwid
+    sudo pip3 install urwid
 
 If you do not have privileges try:
 
-    pip install --user urwid
+    python3 -mpip install --user urwid
 
 If you do not have pip try first:
 
-    sudo apt-get install python-pip
-
+    sudo apt-get install python3-pip

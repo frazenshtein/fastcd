@@ -21,12 +21,12 @@ from os.path import expanduser
 try:
     import urwid
 except ImportError:
-    print("Cannot import urwid module. Install it first 'sudo pip install urwid' or 'pip install --user urwid'")
+    print("Cannot import urwid module. Install it first 'sudo pip3 install urwid' or 'python3 -mpip install --user urwid'")
     exit(1)
 
 URWID_VERSION = urwid.__version__.split(".")
 if float(URWID_VERSION[0] + "." + URWID_VERSION[1]) < 1.1:
-    print("Old urwid version detected (%s). Please, upgrade it first 'sudo pip install --upgrade urwid'" % urwid.__version__)
+    print("Old urwid version detected (%s). Please, upgrade it first 'sudo pip3 install --upgrade urwid'" % urwid.__version__)
     exit(1)
 
 import util
@@ -38,6 +38,7 @@ Jumper shows last visited directories and allows you change cwd quickly.
 You can use arrows and Page Up/Down to navigate the list.
 Start typing to filter directories.
 
+Control:
 {exit} to exit.
 {cd_selected_path} to change directory to the selected.
 {cd_entered_path} to change directory to the entered.
@@ -46,16 +47,19 @@ Start typing to filter directories.
 {clean_input} to clean up input.
 {remove_word} to remove word.
 {copy_selected_path_to_clipboard} to copy selected path to clipboard (pygtk support required).
+
+Search:
 {fuzzy_search} to turn on/off fuzzy search.
 {search_pos} to change search position (any pos / from the beginning of the directory name).
 {case_sensitive} to turn on/off case sensitive search.
 {inc_search_offset} to move search forward.
 {dec_search_offset} to move search backward.
+
+Shortcuts:
 {store_shortcut_path} to set selected path as shortcut.
 {cd_to_shortcut_path} to paste shortcut path.
 
 Supported extra symbols:
-
     * - any number of any character
     $ - end of the line
 
@@ -331,10 +335,7 @@ class PathFilterWidget(urwid.PopUpLauncher):
         self.path_edit.set_edit_pos(len(text))
 
     def get_text(self):
-        text = self.path_edit.get_edit_text()
-        if isinstance(text, unicode):
-            return text.encode("utf-8")
-        return text
+        return self.path_edit.get_edit_text()
 
     def create_pop_up(self):
         return self.popup
@@ -386,6 +387,7 @@ class Display(object):
         # select by default oldpwd or last visited if there is no oldpwd
         self.default_selected_item_index = 1
         self.shortcuts_paths_filename = self.config["shortcuts_paths_file"]
+        self.shortcuts_cache = set()
         self.stored_paths = self.get_stored_paths()
 
         if len(self.stored_paths) < 2:
@@ -484,10 +486,13 @@ class Display(object):
         return paths
 
     def is_shortcut(self, input):
-        return filter(lambda x: input in x, self.shortcuts.values()) != []
+        if not self.shortcuts_cache:
+            for x in self.shortcuts.values():
+                self.shortcuts_cache.update(x)
+        return input in self.shortcuts_cache
 
     def input_handler(self, input):
-        if not isinstance(input, (str, unicode)):
+        if not isinstance(input, str):
             return input
 
         if input in self.shortcuts["exit"]:
@@ -552,14 +557,15 @@ class Display(object):
 
         if input in self.shortcuts["case_sensitive"]:
             self.case_sensitive = not self.case_sensitive
+            self.update_search_engine_label()
 
         if input in self.shortcuts["fuzzy_search"]:
             self.fuzzy_search = not self.fuzzy_search
-            self.search_engine_label.set_text(self.get_search_engine_label_text())
+            self.update_search_engine_label()
 
         if input in self.shortcuts["search_pos"]:
             self.search_from_any_pos = not self.search_from_any_pos
-            self.search_engine_label.set_text(self.get_search_engine_label_text())
+            self.update_search_engine_label()
 
         if input in self.shortcuts["inc_search_offset"]:
             self.search_offset += 1
@@ -596,6 +602,7 @@ class Display(object):
 
         if input in self.shortcuts["clean_input"]:
             self.path_filter.set_text("")
+            return
 
         # display input if it is not a shortcut
         if not self.is_shortcut(input):
@@ -653,6 +660,9 @@ class Display(object):
             self.path_filter.set_text(path)
             return path
 
+    def update_search_engine_label(self):
+        self.search_engine_label.set_text(self.get_search_engine_label_text())
+
     def get_search_engine_label_text(self):
         parts = []
         if self.fuzzy_search:
@@ -664,6 +674,11 @@ class Display(object):
             parts.append("any pos")
         else:
             parts.append("/headed")
+
+        if self.case_sensitive:
+            parts.append("CS")
+        else:
+            parts.append("CIS")
 
         return "[%s]" % " ".join(parts)[:self.search_engine_label_limit - 2]
 

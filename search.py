@@ -228,11 +228,11 @@ class FuzzySearchEngine(SearchEngine):
             left_state = State(pattern[level], pattern[level + 1], self.ANY_SYMBOL, level=level, level_shift=level_shift)
 
             # create state for middle edge and link it with core state
-            middle_State = State(pattern[level - 1], level=level, level_shift=level_shift)
-            middle_State.left_state = core_states[level + 1]
+            middle_state = State(pattern[level - 1], level=level, level_shift=level_shift)
+            middle_state.left_state = core_states[level + 1]
 
             state.left_state = left_state
-            state.middle_state = middle_State
+            state.middle_state = middle_state
             state.right_state = core_states[level]
             # shift to a deeper level
             state = left_state
@@ -289,7 +289,7 @@ class FuzzySearchEngine(SearchEngine):
                     match = self.search_automaton(string, pos, automaton)
                     if not match:
                         return None
-                    elif match.end() == len(string):
+                    if match.end() == len(string):
                         break
                     pos = match.end()
             else:

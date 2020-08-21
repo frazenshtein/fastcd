@@ -9,7 +9,7 @@ JUMPERTOOL="$FASTCDTOOLS/jumper.py"
 
 # Set hook to collect visited dirs
 fastcd_hook() {
-    (python $JUMPERTOOL --add-path "$(pwd)" 2>>${FASTCDTOOLS}/errors.log 1>&2 &) &>/dev/null
+    (python3 $JUMPERTOOL --add-path "$(pwd)" 2>>${FASTCDTOOLS}/errors.log 1>&2 &) &>/dev/null
 }
 
 case $PROMPT_COMMAND in
@@ -23,7 +23,7 @@ esac
 # Set (J)umper
 function j {
     PATHFILE="/tmp/`date +%s`.path"
-    python $JUMPERTOOL --escape-special-symbols -o $PATHFILE $@
+    python3 $JUMPERTOOL --escape-special-symbols -o $PATHFILE $@
     if [[ $? -eq 0 ]] && [[ ! $@ == "--help" ]] && [[ ! $@ == "-h" ]] && [[ ! $@ == "--list-shortcut-paths" ]] && [[ ! $@ == "-l" ]]
     then
         OUTPUTPATH=`cat $PATHFILE`

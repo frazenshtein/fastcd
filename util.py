@@ -53,27 +53,12 @@ def get_nearest_existing_dir(dir):
             return dir
 
 
-def convert_json(data):
-    if isinstance(data, dict):
-        return {convert_json(key): convert_json(value) for key, value in data.iteritems()}
-    elif isinstance(data, list):
-        return [convert_json(element) for element in data]
-    elif isinstance(data, unicode):
-        string = data.encode("utf-8")
-        # if string.isdigit():
-        #     return int(string)
-        return string
-    else:
-        return data
-
-
 def load_json(filename):
     with open(filename) as file:
         data = file.read()
     # remove comments
     data = re.sub(r"\/\*.*?\*\/", "", data, flags=re.MULTILINE|re.DOTALL)
-    jsonData = json.loads(data)
-    return convert_json(jsonData)
+    return json.loads(data)
 
 
 def get_stdin_buffer(one_line=False):
@@ -97,8 +82,7 @@ def get_stdin_buffer(one_line=False):
                         break
                     symbols.append(char)
                 return ''.join(symbols)
-            else:
-                return sys.stdin.read()
+            return sys.stdin.read()
         finally:
             termios.tcsetattr(stdin, termios.TCSANOW, original_tty_attrs)
     except Exception:
