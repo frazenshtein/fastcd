@@ -29,12 +29,15 @@ if float(URWID_VERSION[0] + "." + URWID_VERSION[1]) < 1.1:
     print("Old urwid version detected (%s). Please, upgrade it first 'sudo pip3 install --upgrade urwid'" % urwid.__version__)
     exit(1)
 
-import util
-import search
+try:
+    import util
+    import search
+except ImportError:
+    from fastcd import util, search
 
 
 DESC = '''
-Jumper shows last visited directories and allows you change cwd quickly.
+Fastcd's jumper shows last visited directories and allows you change cwd quickly.
 You can use arrows and Page Up/Down to navigate the list.
 Start typing to filter directories.
 
@@ -68,6 +71,8 @@ Extra options and parameters can be found in config.json.
 
 def parse_command_line(config):
     parser = argparse.ArgumentParser(description=get_description(config["shortcuts"]), formatter_class=argparse.RawTextHelpFormatter)
+    parser.add_argument("install", nargs='?', help="Setup shell hook make fastcd able to track visited directories")
+    parser.add_argument("--alias", default='j', help="Specifies installation alias for fastcd (default: 'j')")
     parser.add_argument("-l", "--list-shortcut-paths", action='store_true', help="Displays list of stored shortcut paths")
     parser.add_argument("-a", "--add-path", default=None, help=argparse.SUPPRESS) # add path to base
     parser.add_argument("-o", "--output", metavar="FILE", default=None, help=argparse.SUPPRESS)
@@ -95,11 +100,6 @@ def get_description(shortcuts):
     return DESC.format(**shortcuts_data)
 
 
-def get_reference_config_path():
-    module_path = os.path.dirname(os.path.realpath(__file__))
-    return os.path.join(module_path, "config.json")
-
-
 def load_config():
     def expand_paths(config):
         paths = ["history_file", "shortcuts_paths_file", "user_config_file"]
@@ -107,7 +107,7 @@ def load_config():
             config[param] = expanduser(config[param])
         return config
 
-    ref_config = expand_paths(util.load_json(get_reference_config_path()))
+    ref_config = expand_paths(util.load_json(util.get_reference_config_path()))
     if os.path.exists(ref_config["user_config_file"]):
         usr_config = expand_paths(util.load_json(ref_config["user_config_file"]))
         config = util.patch_dict(ref_config, usr_config)
@@ -129,7 +129,7 @@ def prepare_environment(config):
     # generate user config
     user_config_file = config["user_config_file"]
     if not os.path.exists(user_config_file):
-        with open(get_reference_config_path()) as afile:
+        with open(util.get_reference_config_path()) as afile:
             data = afile.read()
         # remove description warning
         data = data[data.find("{"):]
@@ -713,7 +713,17 @@ class Display(object):
             self.listbox.set_focus(0)
 
 
-def main(args, config):
+def main():
+    config = load_config()
+    args = parse_command_line(config)
+
+    if args.install:
+        util.install_shell_hook(args.alias)
+        print("Restart console session or run 'source ~/.bashrc' to finish fastcd's installation.")
+        print("Then use '{}' command to run fastcd.".format(args.alias))
+        prepare_environment(config)
+        return
+
     prepare_environment(config)
 
     if args.list_shortcut_paths:
@@ -760,5 +770,4 @@ def main(args, config):
 
 
 if __name__ == '__main__':
-    CONFIG = load_config()
-    main(parse_command_line(CONFIG), CONFIG)
+    main()

@@ -53,6 +53,14 @@ def get_nearest_existing_dir(dir):
             return dir
 
 
+def get_reference_config_path():
+    return os.path.join(get_module_path(), "config.json")
+
+
+def get_module_path():
+    return os.path.dirname(os.path.realpath(__file__))
+
+
 def load_json(filename):
     with open(filename) as file:
         data = file.read()
@@ -160,3 +168,30 @@ def with_status(msg, stream=sys.stdout, truncate=False):
     print_status(msg, stream, truncate)
     yield
     remove_status()
+
+
+def get_bashrc():
+    with open(os.path.expanduser('~/.bashrc')) as afile:
+        return afile.read()
+
+
+def dump_bashrc(data):
+    with open(os.path.expanduser('~/.bashrc'), 'w') as afile:
+        return afile.write(data)
+
+
+def install_shell_hook(alias_name):
+    module_path = get_module_path()
+    filename = os.path.join(module_path, 'fastcd_hook.sh')
+
+    bashrc_data = get_bashrc()
+    pattern = r'source "(.*/fastcd_hook.sh)"; alias (\S+)=fastcd'
+    install_line = 'source "{}"; alias {}=fastcd'.format(filename, alias_name)
+
+    match = re.search(pattern, bashrc_data)
+    if not match :
+        bashrc_data += '\n{}\n'.format(install_line)
+        dump_bashrc(bashrc_data)
+    elif match.group(1) != filename or match.group(2) != alias_name:
+        bashrc_data = re.sub(pattern, install_line, bashrc_data)
+        dump_bashrc(bashrc_data)
