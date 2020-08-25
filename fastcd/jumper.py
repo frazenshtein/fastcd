@@ -30,10 +30,9 @@ if float(URWID_VERSION[0] + "." + URWID_VERSION[1]) < 1.1:
     exit(1)
 
 try:
-    import util
-    import search
-except ImportError:
     from fastcd import util, search
+except ImportError:
+    from . import util, search
 
 
 DESC = '''
