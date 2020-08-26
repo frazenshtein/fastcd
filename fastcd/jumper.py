@@ -465,9 +465,10 @@ class Display(object):
         if check_existence:
             util.print_status("Checking the existence of directories...", truncate=True)
 
+        skip_set = ('', cwd, oldpwd)
         for line in entries:
             path = line.strip()
-            if path in [cwd, oldpwd]:
+            if path in skip_set:
                 continue
             if check_existence:
                 exists = os.path.exists(expanduser(path))
