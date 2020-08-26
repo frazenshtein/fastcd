@@ -171,7 +171,11 @@ def with_status(msg, stream=sys.stdout, truncate=False):
 
 
 def get_bashrc():
-    with open(os.path.expanduser('~/.bashrc')) as afile:
+    filename = os.path.expanduser('~/.bashrc')
+    if not os.path.exists(filename):
+        return ''
+
+    with open(filename) as afile:
         return afile.read()
 
 
