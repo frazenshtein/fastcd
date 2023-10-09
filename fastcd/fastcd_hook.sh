@@ -5,7 +5,7 @@ JUMPERTOOL="$FASTCDDIR/jumper.py"
 FASTCDCONFDIR="$HOME/.local/share/fastcd"
 
 # Set hook to track visited dirs
-_fastcd_hook() {
+function _fastcd_hook() {
     (python3 $JUMPERTOOL --add-path "$(pwd)" 2>>${FASTCDCONFDIR}/errors.log 1>&2 &) &>/dev/null
 }
 
