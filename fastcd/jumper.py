@@ -248,7 +248,7 @@ class AutoCompletionPopup(urwid.WidgetWrap):
         self.pile = urwid.Pile([urwid.LineBox(urwid.BoxAdapter(self.listbox, self.height))])
 
         fill = urwid.Filler(self.pile)
-        self.__super.__init__(urwid.AttrWrap(fill, 'match'))
+        super().__init__(urwid.AttrWrap(fill, 'match'))
 
     def update(self, paths, prefix):
         self.prefix = prefix
